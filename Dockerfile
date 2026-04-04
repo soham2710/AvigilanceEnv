@@ -1,5 +1,5 @@
 # Avigilance 2.0 — India Aviation Safety Monitoring OpenEnv
-FROM python:3.14-slim
+FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -7,13 +7,10 @@ ENV APP_HOME=/app
 
 WORKDIR $APP_HOME
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
+# Use pre-built wheels only — avoids compilation OOM on HF free tier
 COPY requirements-space.txt .
-RUN pip install --no-cache-dir -r requirements-space.txt
+RUN pip install --no-cache-dir --only-binary=:all: -r requirements-space.txt \
+    || pip install --no-cache-dir -r requirements-space.txt
 
 COPY . .
 
