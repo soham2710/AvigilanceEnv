@@ -8,7 +8,8 @@ ENV APP_HOME=/app
 WORKDIR $APP_HOME
 
 COPY requirements-space.txt .
-RUN pip install --no-cache-dir -r requirements-space.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir --prefer-binary -r requirements-space.txt
 
 COPY . .
 

@@ -1,9 +1,9 @@
 # HuggingFace Space dependencies — server + inference only
 # Loose pins to ensure pre-built wheels are available on HF build image
-fastapi>=0.110.0
-uvicorn>=0.29.0
-pydantic>=2.6.0
-openai>=1.30.0
-numpy>=1.24.0
-python-dotenv>=1.0.0
-httpx>=0.25.0
+fastapi>=0.110.0,<1.0.0
+uvicorn>=0.29.0,<1.0.0
+pydantic>=2.6.0,<3.0.0
+openai>=1.30.0,<2.0.0
+numpy>=1.24.0,<2.0.0
+python-dotenv>=1.0.0,<2.0.0
+httpx>=0.25.0,<1.0.0
