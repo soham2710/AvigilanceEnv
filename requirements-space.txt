@@ -1,9 +1,9 @@
-# HuggingFace Space dependencies — server + inference only (no torch, no scipy)
-# For local RL training (pytorch_agent.py, train.py, train_ppo.py) use requirements.txt
-fastapi==0.115.0
-uvicorn[standard]==0.30.0
-pydantic==2.7.0
-openai==1.40.0
-numpy==1.26.4
-python-dotenv==1.0.0
-httpx==0.27.0
+# HuggingFace Space dependencies — server + inference only
+# Loose pins to ensure pre-built wheels are available on HF build image
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.6.0
+openai>=1.30.0
+numpy>=1.24.0
+python-dotenv>=1.0.0
+httpx>=0.25.0
