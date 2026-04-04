@@ -13,10 +13,10 @@ RUN pip install --upgrade pip && \
 
 COPY . .
 
-RUN mkdir -p data
-
 # Run as non-root user (required for HuggingFace Spaces)
-RUN useradd -m -u 1000 user
+RUN useradd -m -u 1000 user && \
+    mkdir -p data && \
+    chown -R user:user $APP_HOME
 USER user
 ENV HOME=/home/user
 ENV PATH=/home/user/.local/bin:$PATH
