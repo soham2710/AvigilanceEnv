@@ -1,0 +1,57 @@
+name: avigilance-env
+version: "1.0.0"
+description: >
+  India Aviation Safety Monitoring Environment — an OpenEnv where an AI agent
+  acts as the intelligent early-warning layer for India's DGCA aviation safety
+  oversight system. Built on rigorous aviation safety principles.
+  Tasks: FTO Quality Scoring (Easy), Incident Prioritizer (Medium),
+  Inspector Resource Allocation (Hard).
+author: Soham Sharma
+organization: NARTC, Botmartz IT Solutions, Indore, India
+domain: aviation-safety-monitoring
+country: india
+tags:
+  - openenv
+  - aviation
+  - safety-monitoring
+  - india
+  - dgca
+  - real-world
+  - neurosymbolic
+tasks:
+  - id: task1
+    name: FTO Quality Scorer
+    difficulty: easy
+    description: Score a Flying Training Organisation against DGCA's 5-parameter rubric
+    max_steps: 1
+    reward_range: [0.0, 1.0]
+  - id: task2
+    name: Incident Prioritizer
+    difficulty: medium
+    description: Rank DGCA safety incidents by urgency with pattern detection
+    max_steps: 1
+    reward_range: [0.0, 1.0]
+  - id: task3
+    name: Resource Allocator
+    difficulty: hard
+    description: Optimal inspector dispatch across FTO audits and incidents
+    max_steps: 2
+    reward_range: [0.0, 1.0]
+observation_space:
+  type: object
+  schema: environment/models.py::AvigilanceObservation
+action_space:
+  type: object
+  schema: environment/models.py::AvigilanceAction
+reward_space:
+  type: object
+  schema: environment/models.py::AvigilanceReward
+baseline_scores:
+  task1: 0.8190
+  task2: 0.5358
+  task3: 0.8380
+infrastructure:
+  hf_space_tag: openenv
+  min_memory_gb: 2
+  min_vcpus: 1
+  max_inference_minutes: 20
