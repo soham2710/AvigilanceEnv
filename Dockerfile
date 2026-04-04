@@ -7,10 +7,8 @@ ENV APP_HOME=/app
 
 WORKDIR $APP_HOME
 
-# Use pre-built wheels only — avoids compilation OOM on HF free tier
 COPY requirements-space.txt .
-RUN pip install --no-cache-dir --only-binary=:all: -r requirements-space.txt \
-    || pip install --no-cache-dir -r requirements-space.txt
+RUN pip install --no-cache-dir -r requirements-space.txt
 
 COPY . .
 
