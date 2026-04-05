@@ -34,6 +34,7 @@ dependencies = [
 ]
 
 [project.scripts]
+serve = "server.app:main"
 avigilance-server = "server.app:main"
 
 [project.optional-dependencies]
@@ -47,5 +48,5 @@ Repository = "https://github.com/soham2710/AvigilanceEnv"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["environment*"]
+include = ["environment*", "server*"]
 exclude = [".venv*", "data*"]
