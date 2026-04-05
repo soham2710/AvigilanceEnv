@@ -168,10 +168,10 @@ Measured by running `evaluate_agent.py --full` with `Qwen/Qwen2.5-72B-Instruct` 
 
 | Task | Mean Reward | Std | Episodes |
 |------|------------|-----|---------|
-| Task 1: FTO Quality Scorer | 0.8190 | 0.0860 | 100 |
-| Task 2: Incident Prioritiser | 0.8500 | 0.0950 | 100 |
-| Task 3: Resource Allocator | 0.8380 | 0.0842 | 10 |
-| Mean | 0.8357 | | |
+| Task 1: FTO Quality Scorer | 0.8000 | 0.1050 | 100 |
+| Task 2: Incident Prioritiser | 0.7100 | 0.1420 | 100 |
+| Task 3: Resource Allocator | 0.8530 | 0.0920 | 10 |
+| Mean | 0.7877 | | |
 
 These scores match `openenv.yaml`. The agent uses a rolling memory buffer (8 entries) that accumulates domain lessons across episodes.
 
