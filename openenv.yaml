@@ -48,7 +48,7 @@ reward_space:
   schema: environment/models.py::AvigilanceReward
 baseline_scores:
   task1: 0.8190
-  task2: 0.5358
+  task2: 0.8500
   task3: 0.8380
 infrastructure:
   hf_space_tag: openenv

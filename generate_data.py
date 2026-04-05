@@ -133,7 +133,8 @@ for idx in range(5000):
     airline = random.choice(AIRLINES)
     incidents.append({
         "incident_id": f"INC_{idx:05d}", "date": f"2025-{random.randint(1,12):02d}-{random.randint(1,28):02d}",
-        "airport_code": airport["code"], "airline": airline, "incident_type": inc_type, "severity": "high",
+        "airport_code": airport["code"], "airline": airline, "incident_type": inc_type,
+        "severity": random.choices(["low", "medium", "high", "critical"], [15, 35, 35, 15])[0],
         "description": f"Stress report: {inc_type} at {airport['name']}.",
         "recurrence_count": random.randint(0, 10), "aircraft_type": random.choice(["A320", "B737"]),
         "flights_per_day_at_airport": airport["flights_per_day"], "days_since_last_inspection": random.randint(1, 1000),
