@@ -52,19 +52,31 @@ if not API_KEY:
 
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
-# Ordered fallback pool — rotated automatically on rate limits.
-# openrouter/free is OpenRouter's own smart router across all free models.
-FREE_MODEL_POOL = [
-    "openrouter/free",
-    "google/gemma-3-27b-it:free",
-    "meta-llama/llama-3.2-3b-instruct:free",
-    "google/gemma-3-12b-it:free",
-    "google/gemma-3-4b-it:free",
-    "google/gemma-3n-e4b-it:free",
-    "nousresearch/hermes-3-llama-3.1-405b:free",
-    "nvidia/nemotron-3-super-120b-a12b:free",
-    "liquid/lfm-2.5-1.2b-instruct:free",
-]
+# Provider-aware fallback pool — rotation stays within the active endpoint.
+_is_hf = "huggingface" in API_BASE_URL
+_is_openai = "openai.com" in API_BASE_URL
+
+if _is_hf:
+    FREE_MODEL_POOL = [
+        "Qwen/Qwen2.5-72B-Instruct",
+        "meta-llama/Llama-3.3-70B-Instruct",
+        "mistralai/Mixtral-8x7B-Instruct-v0.1",
+        "Qwen/Qwen2.5-7B-Instruct",
+        "meta-llama/Llama-3.1-8B-Instruct",
+    ]
+elif _is_openai:
+    FREE_MODEL_POOL = [
+        "gpt-4o-mini",
+        "gpt-3.5-turbo",
+    ]
+else:
+    FREE_MODEL_POOL = [
+        "openrouter/auto",
+        "google/gemma-3-27b-it:free",
+        "meta-llama/llama-3.2-3b-instruct:free",
+        "google/gemma-3-12b-it:free",
+        "nousresearch/hermes-3-llama-3.1-405b:free",
+    ]
 
 _pool = [MODEL_NAME] + [m for m in FREE_MODEL_POOL if m != MODEL_NAME]
 _active_idx = 0  # sticky: retains last working model across all calls
