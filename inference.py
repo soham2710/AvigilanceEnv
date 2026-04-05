@@ -15,14 +15,20 @@ from environment.models import (
     ResourceAllocationAction
 )
 
-MODEL_NAME = os.environ.get("MODEL_NAME", "openrouter/free")
-_base_url = os.environ.get("API_BASE_URL", "https://openrouter.ai/api/v1")
-_api_key = (
-    os.environ.get("HF_TOKEN") if "huggingface" in _base_url
-    else os.environ.get("OPEN_ROUTER_API")
-    or os.environ.get("HF_TOKEN")
-    or os.environ.get("OPENAI_API_KEY", "")
-)
+MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
+_base_url = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
+
+# Key resolution: hackathon evaluators supply HF_TOKEN as the universal API key.
+# For local dev, URL-specific keys take priority when set.
+if "openai.com" in _base_url:
+    _api_key = (os.environ.get("OPENAI_API_KEY")
+                or os.environ.get("HF_TOKEN", ""))
+elif "huggingface" in _base_url:
+    _api_key = os.environ.get("HF_TOKEN", "")
+else:
+    _api_key = (os.environ.get("OPEN_ROUTER_API")
+                or os.environ.get("HF_TOKEN")
+                or os.environ.get("OPENAI_API_KEY", ""))
 
 client = OpenAI(base_url=_base_url, api_key=_api_key)
 

@@ -33,14 +33,18 @@ from environment.models import (
 
 load_dotenv()
 
-MODEL_NAME = os.environ.get("MODEL_NAME", "openrouter/free")
-API_BASE_URL = os.environ.get("API_BASE_URL", "https://openrouter.ai/api/v1")
-API_KEY = (
-    os.environ.get("HF_TOKEN") if "huggingface" in API_BASE_URL
-    else os.environ.get("OPEN_ROUTER_API")
-    or os.environ.get("HF_TOKEN")
-    or os.environ.get("OPENAI_API_KEY", "")
-)
+MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
+API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
+
+if "openai.com" in API_BASE_URL:
+    API_KEY = (os.environ.get("OPENAI_API_KEY")
+               or os.environ.get("HF_TOKEN", ""))
+elif "huggingface" in API_BASE_URL:
+    API_KEY = os.environ.get("HF_TOKEN", "")
+else:
+    API_KEY = (os.environ.get("OPEN_ROUTER_API")
+               or os.environ.get("HF_TOKEN")
+               or os.environ.get("OPENAI_API_KEY", ""))
 
 if not API_KEY:
     print("ERROR: No API key found. Set OPEN_ROUTER_API, HF_TOKEN, or OPENAI_API_KEY in .env.")
