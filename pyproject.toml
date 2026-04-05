@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "avigilance-env"
+version = "1.0.0"
+description = "India Aviation Safety Monitoring OpenEnv — DGCA safety oversight AI benchmark"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+authors = [
+    { name = "Soham Sharma", email = "soham@botmartz.com" }
+]
+keywords = ["openenv", "aviation", "safety", "india", "dgca", "reinforcement-learning"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "fastapi>=0.110.0,<1.0.0",
+    "uvicorn>=0.29.0,<1.0.0",
+    "pydantic>=2.6.0,<3.0.0",
+    "openai>=1.30.0,<2.0.0",
+    "numpy>=1.24.0,<2.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "httpx>=0.25.0,<1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+]
+
+[project.urls]
+Homepage = "https://huggingface.co/spaces/soham27/AvigilanceEnv"
+Repository = "https://github.com/soham2710/AvigilanceEnv"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["environment*"]
+exclude = [".venv*", "data*"]
