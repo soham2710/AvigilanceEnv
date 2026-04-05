@@ -34,8 +34,7 @@ dependencies = [
 ]
 
 [project.scripts]
-serve = "server.app:main"
-avigilance-server = "server.app:main"
+server = "server.app:main"
 
 [project.optional-dependencies]
 dev = [

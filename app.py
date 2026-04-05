@@ -58,7 +58,39 @@ def state(task_id: str = "task1"):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "env": "AvigilanceEnv"}
+    return {"status": "healthy", "env": "AvigilanceEnv"}
+
+
+@app.get("/metadata")
+def metadata():
+    return {
+        "name": "AvigilanceEnv",
+        "description": "India Aviation Safety Monitoring OpenEnv — DGCA Early Warning System",
+        "version": "1.0.0",
+        "tasks": ["task1", "task2", "task3"],
+    }
+
+
+@app.get("/schema")
+def schema():
+    from environment.models import AvigilanceObservation, AvigilanceAction, AvigilanceReward
+    return {
+        "observation": AvigilanceObservation.model_json_schema(),
+        "action": AvigilanceAction.model_json_schema(),
+        "state": AvigilanceReward.model_json_schema(),
+    }
+
+
+@app.post("/mcp")
+def mcp(payload: dict = {}):
+    return {
+        "jsonrpc": "2.0",
+        "id": payload.get("id"),
+        "result": {
+            "name": "AvigilanceEnv",
+            "tools": ["reset", "step", "state"],
+        },
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=7860)
