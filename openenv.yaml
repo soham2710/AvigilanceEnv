@@ -24,19 +24,19 @@ tasks:
     difficulty: easy
     description: Score a Flying Training Organisation against DGCA's 5-parameter rubric
     max_steps: 1
-    reward_range: [0.0, 1.0]
+    reward_range: [0.0001, 0.9999]
   - id: task2
     name: Incident Prioritizer
     difficulty: medium
     description: Rank DGCA safety incidents by urgency with pattern detection
     max_steps: 1
-    reward_range: [0.0, 1.0]
+    reward_range: [0.0001, 0.9999]
   - id: task3
     name: Resource Allocator
     difficulty: hard
     description: Optimal inspector dispatch across FTO audits and incidents
     max_steps: 2
-    reward_range: [0.0, 1.0]
+    reward_range: [0.0001, 0.9999]
 observation_space:
   type: object
   schema: environment/models.py::AvigilanceObservation

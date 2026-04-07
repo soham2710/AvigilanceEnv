@@ -1,5 +1,6 @@
 from ..models import ResourceAllocationAction, FTOProfile, IncidentReport, IncidentSeverity
 from typing import List, Dict
+from ..scoring import normalize_open_score
 
 AUDIT_HOURS = {"C": 16, "B": 8, "near_C": 12}  # Hours per FTO audit
 INCIDENT_HOURS = {
@@ -37,10 +38,11 @@ def grade_task3(action: ResourceAllocationAction,
     if action.abstain:
         if not is_solvable:
             # Justified caution in impossible scenario
-            return 0.35 if action.abstain_reason and len(action.abstain_reason) > 20 else 0.15
+            score = 0.35 if action.abstain_reason and len(action.abstain_reason) > 20 else 0.15
+            return normalize_open_score(score)
         else:
             # Lazy abstention in solvable scenario (PENALTY)
-            return 0.15
+            return normalize_open_score(0.15)
 
     score = 0.0
     # 3. Constraint satisfaction (30% of reward)
@@ -96,4 +98,4 @@ def grade_task3(action: ResourceAllocationAction,
     score += 0.20 * computed_risk_reduction
 
     # If the strategy was successful, it must outscore the "Justified Caution" (0.35)
-    return round(min(score, 1.0), 4)
+    return normalize_open_score(score)

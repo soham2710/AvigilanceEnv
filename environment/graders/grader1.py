@@ -1,5 +1,6 @@
 from ..models import FTOGradeAction
 from typing import Dict, Any
+from ..scoring import normalize_open_score
 
 def grade_task1(action: FTOGradeAction, ground_truth: Dict[str, Any]) -> float:
     score = 0.0
@@ -25,4 +26,4 @@ def grade_task1(action: FTOGradeAction, ground_truth: Dict[str, Any]) -> float:
     elif action.recommended_action in ground_truth.get("acceptable_actions", []):
         score += 0.10
         
-    return round(min(score, 1.0), 4)
+    return normalize_open_score(score)

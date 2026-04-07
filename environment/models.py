@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Dict, Optional, Literal
 from enum import Enum
+from .scoring import normalize_open_score
 
 class IncidentSeverity(str, Enum):
     LOW = "low"
@@ -121,3 +122,8 @@ class AvigilanceReward(BaseModel):
     safety_principle_p3_consistency: float = Field(ge=0.0, le=1.0)
     feedback: str
     done: bool
+
+    @field_validator('score')
+    @classmethod
+    def enforce_open_interval(cls, value: float) -> float:
+        return normalize_open_score(value)

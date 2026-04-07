@@ -132,7 +132,7 @@ All actions are submitted as `AvigilanceAction` (Pydantic v2 model).
 
 ## Reward Function
 
-All rewards are in [0.0, 1.0].
+All task rewards are normalized into the strict open interval (0, 1). In practice this repo emits scores in [0.0001, 0.9999] to satisfy validator requirements.
 
 **Task 1:**
 

@@ -14,6 +14,7 @@ from environment.models import (
     AvigilanceAction, FTOGradeAction, IncidentPriorityAction,
     ResourceAllocationAction
 )
+from environment.scoring import normalize_open_score
 
 MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
 _base_url = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
@@ -474,7 +475,9 @@ Respond with JSON only:
         if done:
             break
 
-    total = sum(step_rewards) / len(step_rewards) if step_rewards else 0.0
+    total = normalize_open_score(
+        sum(step_rewards) / len(step_rewards) if step_rewards else 0.0
+    )
     print(f"[END] task={task_id} score={total} steps={len(step_rewards)}", flush=True)
     print(json.dumps({
         "event": "END",
@@ -498,7 +501,7 @@ if __name__ == "__main__":
         except Exception as e:
             task = runner.__name__.replace("run_", "")
             print(json.dumps({"event": "ERROR", "task_id": task, "error": str(e)}))
-            results.append({"task": task, "score": 0.0})
+            results.append({"task": task, "score": normalize_open_score(0.0)})
 
     mean = round(sum(r["score"] for r in results) / len(results), 4)
     print(json.dumps({

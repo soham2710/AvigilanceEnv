@@ -1,5 +1,6 @@
 from ..models import IncidentPriorityAction, IncidentReport
 from typing import List, Dict
+from ..scoring import normalize_open_score
 
 SEVERITY_BASE = {
     "runway_incursion": 0.95,
@@ -64,4 +65,4 @@ def grade_task2(action: IncidentPriorityAction, incidents: List[IncidentReport])
     elif action.pattern_detected and not real_pattern_exists:
         score += 0.05  # Partial credit: false alarm better than missing one
 
-    return round(min(score, 1.0), 4)
+    return normalize_open_score(score)
