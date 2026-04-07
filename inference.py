@@ -124,6 +124,7 @@ def run_task1(seed: int = 42) -> dict:
     task_id = "task1"
     env = AvigilanceEnv(task_id=task_id, seed=seed)
     obs = env.reset()
+    print(f"[START] task={task_id}", flush=True)
 
     print(json.dumps({
         "event": "START",
@@ -199,6 +200,7 @@ Respond with JSON only:
 
     obs2, reward, done, info = env.step(action)
 
+    print(f"[STEP] step=1 reward={reward.score}", flush=True)
     print(json.dumps({
         "event": "STEP",
         "task_id": task_id,
@@ -207,6 +209,7 @@ Respond with JSON only:
         "done": done,
         "latency_s": latency,
     }))
+    print(f"[END] task={task_id} score={reward.score} steps=1", flush=True)
     print(json.dumps({
         "event": "END",
         "task_id": task_id,
@@ -224,6 +227,7 @@ def run_task2(seed: int = 42) -> dict:
     task_id = "task2"
     env = AvigilanceEnv(task_id=task_id, seed=seed)
     obs = env.reset()
+    print(f"[START] task={task_id}", flush=True)
 
     print(json.dumps({
         "event": "START",
@@ -318,6 +322,7 @@ Respond with JSON only:
 
     obs2, reward, done, info = env.step(action)
 
+    print(f"[STEP] step=1 reward={reward.score}", flush=True)
     print(json.dumps({
         "event": "STEP",
         "task_id": task_id,
@@ -326,6 +331,7 @@ Respond with JSON only:
         "done": done,
         "latency_s": latency,
     }))
+    print(f"[END] task={task_id} score={reward.score} steps=1", flush=True)
     print(json.dumps({
         "event": "END",
         "task_id": task_id,
@@ -343,6 +349,7 @@ def run_task3(seed: int = 42) -> dict:
     task_id = "task3"
     env = AvigilanceEnv(task_id=task_id, seed=seed)
     obs = env.reset()
+    print(f"[START] task={task_id}", flush=True)
 
     print(json.dumps({
         "event": "START",
@@ -454,6 +461,7 @@ Respond with JSON only:
         obs, reward, done, info = env.step(action)
 
         step_rewards.append(reward.score)
+        print(f"[STEP] step={step_num + 1} reward={reward.score}", flush=True)
         print(json.dumps({
             "event": "STEP",
             "task_id": task_id,
@@ -467,6 +475,7 @@ Respond with JSON only:
             break
 
     total = sum(step_rewards) / len(step_rewards) if step_rewards else 0.0
+    print(f"[END] task={task_id} score={total} steps={len(step_rewards)}", flush=True)
     print(json.dumps({
         "event": "END",
         "task_id": task_id,
