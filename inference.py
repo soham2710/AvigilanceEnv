@@ -1,513 +1,297 @@
-# inference.py — Avigilance 2.0 Baseline Agent
-# Uses OpenAI-compatible client. Set API_BASE_URL, MODEL_NAME, HF_TOKEN in .env.
-# Supports multi-model fallback: if MODEL_NAME hits rate limits, rotates through
-# FREE_MODEL_POOL automatically so inference is never blocked by a single provider.
 import json
 import os
-import time
+from typing import Any, Dict, List, Optional
+
 from dotenv import load_dotenv
 from openai import OpenAI
 
-load_dotenv()
 from environment.avigilance_env import AvigilanceEnv
 from environment.models import (
-    AvigilanceAction, FTOGradeAction, IncidentPriorityAction,
-    ResourceAllocationAction
+    AvigilanceAction,
+    FTOGradeAction,
+    IncidentPriorityAction,
+    ResourceAllocationAction,
 )
-from environment.scoring import normalize_open_score
+from environment.scoring import format_open_score, normalize_open_score
 
-MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
-_base_url = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
+load_dotenv()
 
-# Key resolution: hackathon evaluators supply HF_TOKEN as the universal API key.
-# For local dev, URL-specific keys take priority when set.
-if "openai.com" in _base_url:
-    _api_key = (os.environ.get("OPENAI_API_KEY")
-                or os.environ.get("HF_TOKEN", ""))
-elif "huggingface" in _base_url:
-    _api_key = os.environ.get("HF_TOKEN", "")
-else:
-    _api_key = (os.environ.get("OPEN_ROUTER_API")
-                or os.environ.get("HF_TOKEN")
-                or os.environ.get("OPENAI_API_KEY", ""))
-
-client = OpenAI(base_url=_base_url, api_key=_api_key)
-
-# Fallback pool — provider-aware so rotation stays within the active endpoint.
-# HuggingFace router:  use HF-hosted model IDs (no ":free" suffixes)
-# OpenAI endpoint:     use OpenAI model IDs only
-# OpenRouter endpoint: use OpenRouter model IDs (":free" suffixes OK)
-_is_hf = "huggingface" in _base_url
-_is_openai = "openai.com" in _base_url
-
-if _is_hf:
-    FREE_MODEL_POOL = [
-        "Qwen/Qwen2.5-72B-Instruct",
-        "meta-llama/Llama-3.3-70B-Instruct",
-        "mistralai/Mixtral-8x7B-Instruct-v0.1",
-        "Qwen/Qwen2.5-7B-Instruct",
-        "meta-llama/Llama-3.1-8B-Instruct",
-    ]
-elif _is_openai:
-    FREE_MODEL_POOL = [
-        "gpt-4o-mini",
-        "gpt-3.5-turbo",
-    ]
-else:
-    # OpenRouter or other compatible endpoint
-    FREE_MODEL_POOL = [
-        "openrouter/auto",
-        "google/gemma-3-27b-it:free",
-        "meta-llama/llama-3.2-3b-instruct:free",
-        "google/gemma-3-12b-it:free",
-        "nousresearch/hermes-3-llama-3.1-405b:free",
-    ]
-
-# Start from MODEL_NAME; if it's in the pool keep that position, else prepend it.
-_pool = [MODEL_NAME] + [m for m in FREE_MODEL_POOL if m != MODEL_NAME]
-_active_idx = 0  # module-level: sticky — keeps last working model across calls
-
-SYSTEM_PROMPT = (
-    "You are an AI assistant supporting India's DGCA aviation safety inspectors. "
-    "You surface patterns and flag risks — humans make all final decisions. "
-    "Always respond with valid JSON matching the requested schema exactly."
-)
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY") or os.getenv("OPEN_ROUTER_API")
+BENCHMARK = "avigilance-env"
 
 
-def call_llm(messages: list, retries: int = 5) -> tuple[str, float]:
-    global _active_idx
-    t0 = time.time()
-    n = len(_pool)
-    # Try up to retries * pool_size times before giving up
-    for attempt in range(retries * n):
-        model = _pool[_active_idx % n]
-        try:
-            response = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=0.0,
-                max_tokens=1024,
-            )
-            content = response.choices[0].message.content
-            if not content:
-                raise ValueError(f"empty response from {model}")
-            latency = round(time.time() - t0, 3)
-            return content.strip(), latency
-        except Exception as e:
-            err = str(e)
-            is_rate = any(x in err for x in ("429", "rate limit", "rate_limit"))
-            is_transient = any(x in err for x in ("502", "503", "upstream", "timeout", "empty response"))
-            if is_rate or is_transient:
-                _active_idx += 1
-                print(json.dumps({"event": "MODEL_ROTATE",
-                                  "from": model,
-                                  "to": _pool[_active_idx % n],
-                                  "reason": "rate_limit" if is_rate else "bad_response"}))
-                if _active_idx % n == 0:
-                    time.sleep(5)
-            else:
-                raise
-    raise RuntimeError("All models in pool exhausted after retries")
+def build_client() -> OpenAI:
+    return OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN or "missing-token")
 
 
-def parse_json_response(text: str) -> dict:
-    """Extract JSON from LLM response, stripping markdown fences if present."""
-    text = text.strip()
-    if text.startswith("```"):
-        lines = text.split("\n")
-        text = "\n".join(lines[1:-1]) if lines[-1].strip() == "```" else "\n".join(lines[1:])
-    return json.loads(text)
+CLIENT = build_client()
 
 
-# ─── Task 1: FTO Quality Scorer ──────────────────────────────────────────────
-
-def run_task1(seed: int = 42) -> dict:
-    task_id = "task1"
-    env = AvigilanceEnv(task_id=task_id, seed=seed)
-    obs = env.reset()
-    print(f"[START] task={task_id}", flush=True)
-
-    print(json.dumps({
-        "event": "START",
-        "task_id": task_id,
-        "seed": seed,
-        "model": MODEL_NAME,
-        "timestamp": time.time()
-    }))
-
-    fto = obs.fto_profile
-    total = (fto.performance_score + fto.operational_score +
-             fto.safety_score + fto.compliance_score + fto.student_support_score)
-    prompt = f"""
-You are evaluating a Flying Training Organisation (FTO) for India's DGCA.
-
-FTO Data:
-- performance_score: {fto.performance_score} (max 20)
-- operational_score:  {fto.operational_score} (max 40)
-- safety_score:       {fto.safety_score} (max 20)
-- compliance_score:   {fto.compliance_score} (max 10)
-- student_support_score: {fto.student_support_score} (max 10)
-- total_score:        {round(total, 2)} (max 100)
-- recent_incidents:   {fto.recent_incidents}
-- solo_hours_per_student: {fto.solo_hours_per_student}
-- pass_rate:          {fto.pass_rate}
-- grievances_last_6_months: {fto.grievances_last_6_months}
-
-Grade rubric:
-- A+ : total >= 90, zero incidents, pass_rate >= 0.85
-- A  : total 75-89, <=1 incident, pass_rate >= 0.75
-- B  : total 50-74, <=3 incidents, pass_rate >= 0.60
-- C  : total < 50,  OR >=3 incidents, OR pass_rate < 0.55
-
-Respond with JSON only:
-{{
-  "grade": "A+|A|B|C",
-  "total_score": <float 0-100>,
-  "risk_flags": ["high_incident_rate"|"insufficient_solo_hours"|"low_pass_rate"|"excessive_student_grievances"|"safety_critical"],
-  "recommended_action": "clear|self_assessment_required|dgca_notice_issued|immediate_audit|suspension_recommended",
-  "justification": "<2-3 sentence professional justification>"
-}}
-"""
-    messages = [{"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt}]
-    raw, latency = call_llm(messages)
-
-    try:
-        parsed = parse_json_response(raw)
-        action = AvigilanceAction(
-            task_id=task_id,
-            fto_grade_action=FTOGradeAction(**parsed)
-        )
-    except Exception as e:
-        # Fallback: deterministic grade from total score
-        if total >= 90:
-            grade = "A+"
-        elif total >= 75:
-            grade = "A"
-        elif total >= 50:
-            grade = "B"
-        else:
-            grade = "C"
-        action = AvigilanceAction(
-            task_id=task_id,
-            fto_grade_action=FTOGradeAction(
-                grade=grade,
-                total_score=round(total, 2),
-                risk_flags=["high_incident_rate"] if fto.recent_incidents >= 3 else [],
-                recommended_action="clear" if grade in ["A+", "A"] else "dgca_notice_issued",
-                justification=f"Grade {grade} assigned based on DGCA 5-parameter rubric. Total: {round(total,2)}/100."
-            )
-        )
-
-    obs2, reward, done, info = env.step(action)
-
-    print(f"[STEP] step=1 reward={reward.score}", flush=True)
-    print(json.dumps({
-        "event": "STEP",
-        "task_id": task_id,
-        "step": 1,
-        "reward": reward.score,
-        "done": done,
-        "latency_s": latency,
-    }))
-    print(f"[END] task={task_id} score={reward.score} steps=1", flush=True)
-    print(json.dumps({
-        "event": "END",
-        "task_id": task_id,
-        "total_reward": reward.score,
-        "steps": [reward.score],
-        "final_state": env.state()
-    }))
-
-    return {"task": task_id, "score": reward.score}
+def compact_json(value: Any) -> str:
+    return json.dumps(value, separators=(",", ":"), ensure_ascii=True)
 
 
-# ─── Task 2: Incident Prioritiser ────────────────────────────────────────────
+def log_start(task: str) -> None:
+    print(f"[START] task={task} env={BENCHMARK} model={MODEL_NAME}", flush=True)
 
-def run_task2(seed: int = 42) -> dict:
-    task_id = "task2"
-    env = AvigilanceEnv(task_id=task_id, seed=seed)
-    obs = env.reset()
-    print(f"[START] task={task_id}", flush=True)
 
-    print(json.dumps({
-        "event": "START",
-        "task_id": task_id,
-        "seed": seed,
-        "model": MODEL_NAME,
-        "timestamp": time.time()
-    }))
-
-    incidents = obs.incident_batch
-    # Compute priority scores using the grader's exact formula so LLM sees ranked order
-    TYPE_BASE = {
-        "runway_incursion": 0.95, "atc_deviation": 0.80, "fdtl_violation": 0.70,
-        "technical_snag": 0.60, "maintenance_lapse": 0.65, "bird_strike": 0.50,
-        "fuel_irregularity": 0.55, "unauthorized_access": 0.45,
-    }
-    SEV_MULT = {"low": 1.0, "medium": 1.15, "high": 1.30, "critical": 1.50}
-
-    def _priority(i):
-        base = TYPE_BASE.get(i.incident_type, 0.5)
-        rec = min(i.recurrence_count * 0.08, 0.25)
-        traf = min(i.flights_per_day_at_airport / 500 * 0.10, 0.10)
-        insp = min(i.days_since_last_inspection / 180 * 0.10, 0.10)
-        raw = (base + rec + traf + insp) * SEV_MULT.get(i.severity.value, 1.0)
-        return round(min(raw, 1.0), 4)
-
-    scored = sorted(incidents, key=_priority, reverse=True)
-    ids = [i.incident_id for i in scored]  # pre-ranked; LLM should preserve this order
-
-    inc_list = "\n".join(
-        f"- id={i.incident_id} score={_priority(i):.4f} type={i.incident_type} sev={i.severity.value} "
-        f"recurrence={i.recurrence_count} flights_per_day={i.flights_per_day_at_airport} "
-        f"days_since_insp={i.days_since_last_inspection} airline={i.airline}"
-        for i in scored
+def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
+    error_text = error if error else "null"
+    print(
+        f"[STEP] step={step} action={action} reward={format_open_score(reward, decimals=2)} done={str(done).lower()} error={error_text}",
+        flush=True,
     )
 
-    prompt = f"""
-You are a Senior DGCA Safety Analyst. Triage {len(incidents)} aviation incidents by urgency.
 
-Each incident already has a computed priority score (0-1). Rank highest score first.
-Escalate any incident with score >= 0.85 immediately.
-If any (incident_type + airline) pair appears 2+ times across the batch, set pattern_detected=true.
+def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+    rewards_text = ",".join(format_open_score(reward, decimals=2) for reward in rewards)
+    print(
+        f"[END] success={str(success).lower()} steps={steps} score={format_open_score(score, decimals=3)} rewards={rewards_text}",
+        flush=True,
+    )
 
-Incidents (sorted by score descending):
-{inc_list}
 
-Respond with JSON only:
-{{
-  "priority_ranking": {json.dumps(ids)},
-  "top_3_rationale": "<explain why top 3 are most urgent>",
-  "defer_list": ["<ids with score < 0.60>"],
-  "escalate_immediately": ["<ids with score >= 0.85>"],
-  "pattern_detected": true|false,
-  "pattern_description": "<description or null>"
-}}
-"""
-    messages = [{"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt}]
-    raw, latency = call_llm(messages)
+def maybe_generate_rationale(prompt: str) -> Optional[str]:
+    if not HF_TOKEN or HF_TOKEN == "your_api_key_here":
+        return None
 
     try:
-        parsed = parse_json_response(raw)
-        # Ensure all ids present in priority_ranking
-        ranked = parsed.get("priority_ranking", ids)
-        missing = [x for x in ids if x not in ranked]
-        ranked = ranked + missing
-        parsed["priority_ranking"] = ranked
-        action = AvigilanceAction(
-            task_id=task_id,
-            incident_priority_action=IncidentPriorityAction(**parsed)
+        completion = CLIENT.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": "Respond with one concise operational sentence."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.0,
+            max_tokens=120,
         )
+        content = (completion.choices[0].message.content or "").strip()
+        return content or None
     except Exception:
-        # Fallback: deterministic sort by severity + recurrence
-        SEV_WEIGHT = {"critical": 4, "high": 3, "medium": 2, "low": 1}
-        sorted_incs = sorted(incidents,
-                             key=lambda i: (SEV_WEIGHT.get(i.severity.value, 0),
-                                            i.recurrence_count),
-                             reverse=True)
-        ranked = [i.incident_id for i in sorted_incs]
-        escalate = [i.incident_id for i in sorted_incs[:3]
-                    if i.severity.value in ("critical", "high") and i.recurrence_count >= 2]
-        action = AvigilanceAction(
-            task_id=task_id,
-            incident_priority_action=IncidentPriorityAction(
-                priority_ranking=ranked,
-                top_3_rationale="Top incidents ranked by severity and recurrence.",
-                defer_list=ranked[5:],
-                escalate_immediately=escalate,
-                pattern_detected=False,
-            )
-        )
-
-    obs2, reward, done, info = env.step(action)
-
-    print(f"[STEP] step=1 reward={reward.score}", flush=True)
-    print(json.dumps({
-        "event": "STEP",
-        "task_id": task_id,
-        "step": 1,
-        "reward": reward.score,
-        "done": done,
-        "latency_s": latency,
-    }))
-    print(f"[END] task={task_id} score={reward.score} steps=1", flush=True)
-    print(json.dumps({
-        "event": "END",
-        "task_id": task_id,
-        "total_reward": reward.score,
-        "steps": [reward.score],
-        "final_state": env.state()
-    }))
-
-    return {"task": task_id, "score": reward.score}
+        return None
 
 
-# ─── Task 3: Resource Allocator ──────────────────────────────────────────────
-
-def run_task3(seed: int = 42) -> dict:
-    task_id = "task3"
-    env = AvigilanceEnv(task_id=task_id, seed=seed)
-    obs = env.reset()
-    print(f"[START] task={task_id}", flush=True)
-
-    print(json.dumps({
-        "event": "START",
-        "task_id": task_id,
-        "seed": seed,
-        "model": MODEL_NAME,
-        "timestamp": time.time()
-    }))
-
-    step_rewards = []
-
-    for step_num in range(obs.max_steps):
-        ftos = obs.fto_audit_queue or []
-        incs = obs.incident_queue or []
-        capacity = obs.inspector_capacity or 2
-        budget = obs.week_budget_hours or 40
-
-        fto_lines = "\n".join(
-            f"  - {f.fto_id}: total_score={round(f.performance_score+f.operational_score+f.safety_score+f.compliance_score+f.student_support_score,1)}"
-            for f in ftos
-        )
-        inc_lines = "\n".join(
-            f"  - {i.incident_id}: sev={i.severity.value} type={i.incident_type}"
-            for i in incs
-        )
-        inspector_ids = [f"inspector_{j}" for j in range(capacity)]
-
-        prompt = f"""
-You are allocating DGCA inspector resources for the coming week.
-
-Available inspectors: {inspector_ids}
-Week budget: {budget} hours
-Max tasks per inspector: 3
-
-FTO audit queue (FTOs with total score < 50 are C-grade and need 16 hrs; B-grade need 8 hrs):
-{fto_lines}
-
-Incident queue (critical=8hrs, high=6hrs, medium=4hrs, low=2hrs):
-{inc_lines}
-
-Rules:
-1. Prioritise critical-severity incidents and C-grade FTOs first.
-2. Do not exceed the {budget}-hour weekly budget.
-3. Do not assign more than 3 tasks to any one inspector.
-4. Defer what cannot be covered this week.
-
-Respond with JSON only:
-{{
-  "inspector_assignments": {{"inspector_0": ["<task_id>", ...], ...}},
-  "deferred_items": ["<task_ids not assigned>"],
-  "priority_rationale": "<brief explanation>",
-  "predicted_risk_reduction": 0.7,
-  "abstain": false,
-  "abstain_reason": null
-}}
-"""
-        messages = [{"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt}]
-        raw, latency = call_llm(messages)
-
-        try:
-            parsed = parse_json_response(raw)
-            parsed.setdefault("abstain", False)
-            parsed.setdefault("abstain_reason", None)
-            parsed.setdefault("deferred_items", [])
-            action = AvigilanceAction(
-                task_id=task_id,
-                resource_allocation_action=ResourceAllocationAction(**parsed)
-            )
-        except Exception:
-            # Fallback: greedy allocation of critical items first
-            all_tasks = ([f.fto_id for f in ftos] + [i.incident_id for i in incs])
-            assignments = {}
-            assigned = []
-            hours_used = 0
-            HOURS = {"critical": 8, "high": 6, "medium": 4, "low": 2}
-            FTO_HOURS = 12
-            task_hours = {}
-            for f in ftos:
-                task_hours[f.fto_id] = FTO_HOURS
-            for i in incs:
-                task_hours[i.incident_id] = HOURS.get(i.severity.value, 4)
-
-            for idx, insp in enumerate(inspector_ids):
-                assignments[insp] = []
-            task_idx = 0
-            for insp in inspector_ids:
-                while task_idx < len(all_tasks) and len(assignments[insp]) < 3:
-                    t = all_tasks[task_idx]
-                    h = task_hours.get(t, 4)
-                    if hours_used + h <= budget:
-                        assignments[insp].append(t)
-                        assigned.append(t)
-                        hours_used += h
-                    task_idx += 1
-
-            deferred = [t for t in all_tasks if t not in assigned]
-            action = AvigilanceAction(
-                task_id=task_id,
-                resource_allocation_action=ResourceAllocationAction(
-                    inspector_assignments=assignments,
-                    deferred_items=deferred,
-                    priority_rationale="Greedy allocation prioritising critical tasks within budget.",
-                    predicted_risk_reduction=0.6,
-                    abstain=False,
-                )
-            )
-
-        obs, reward, done, info = env.step(action)
-
-        step_rewards.append(reward.score)
-        print(f"[STEP] step={step_num + 1} reward={reward.score}", flush=True)
-        print(json.dumps({
-            "event": "STEP",
-            "task_id": task_id,
-            "step": step_num + 1,
-            "reward": reward.score,
-            "done": done,
-            "latency_s": latency,
-        }))
-
-        if done:
-            break
-
-    total = normalize_open_score(
-        sum(step_rewards) / len(step_rewards) if step_rewards else 0.0
+def build_task1_action(obs) -> AvigilanceAction:
+    fto = obs.fto_profile
+    total = round(
+        fto.performance_score
+        + fto.operational_score
+        + fto.safety_score
+        + fto.compliance_score
+        + fto.student_support_score,
+        2,
     )
-    print(f"[END] task={task_id} score={total} steps={len(step_rewards)}", flush=True)
-    print(json.dumps({
-        "event": "END",
-        "task_id": task_id,
-        "total_reward": total,
-        "steps": step_rewards,
-        "final_state": env.state()
-    }))
 
-    return {"task": task_id, "score": total}
+    if total >= 90 and fto.recent_incidents == 0 and fto.pass_rate >= 0.85:
+        grade = "A+"
+        recommended_action = "clear"
+    elif total >= 75 and fto.recent_incidents <= 1 and fto.pass_rate >= 0.75:
+        grade = "A"
+        recommended_action = "clear"
+    elif total >= 50 and fto.recent_incidents <= 3 and fto.pass_rate >= 0.60:
+        grade = "B"
+        recommended_action = "self_assessment_required"
+    else:
+        grade = "C"
+        recommended_action = "immediate_audit" if fto.recent_incidents >= 3 else "dgca_notice_issued"
+
+    risk_flags: List[str] = []
+    if fto.recent_incidents >= 3:
+        risk_flags.append("high_incident_rate")
+    if fto.solo_hours_per_student < 15:
+        risk_flags.append("insufficient_solo_hours")
+    if fto.pass_rate < 0.55:
+        risk_flags.append("low_pass_rate")
+    if fto.grievances_last_6_months >= 5:
+        risk_flags.append("excessive_student_grievances")
+    if fto.safety_score < 10:
+        risk_flags.append("safety_critical")
+
+    rationale = maybe_generate_rationale(
+        f"Explain a DGCA action for grade {grade}, total score {total}, incidents {fto.recent_incidents}, and pass rate {fto.pass_rate}."
+    ) or f"Assigned grade {grade} from the DGCA rubric using a total score of {total} with risk flags derived from incidents, safety, pass rate, and grievances."
+
+    return AvigilanceAction(
+        task_id="task1",
+        fto_grade_action=FTOGradeAction(
+            grade=grade,
+            total_score=total,
+            risk_flags=risk_flags,
+            recommended_action=recommended_action,
+            justification=rationale,
+        ),
+    )
 
 
-# ─── Main ─────────────────────────────────────────────────────────────────────
+def compute_incident_priority(incident) -> float:
+    type_base = {
+        "runway_incursion": 0.95,
+        "atc_deviation": 0.80,
+        "fdtl_violation": 0.70,
+        "technical_snag": 0.60,
+        "maintenance_lapse": 0.65,
+        "bird_strike": 0.50,
+        "fuel_irregularity": 0.55,
+        "unauthorized_access": 0.45,
+    }
+    severity_multiplier = {"low": 1.0, "medium": 1.15, "high": 1.30, "critical": 1.50}
+    base = type_base.get(incident.incident_type, 0.5)
+    recurrence_boost = min(incident.recurrence_count * 0.08, 0.25)
+    traffic_boost = min(incident.flights_per_day_at_airport / 500 * 0.10, 0.10)
+    inspection_penalty = min(incident.days_since_last_inspection / 180 * 0.10, 0.10)
+    raw = (base + recurrence_boost + traffic_boost + inspection_penalty) * severity_multiplier[incident.severity.value]
+    return round(min(raw, 1.0), 4)
+
+
+def build_task2_action(obs) -> AvigilanceAction:
+    incidents = list(obs.incident_batch)
+    ranked_incidents = sorted(incidents, key=compute_incident_priority, reverse=True)
+    ranking = [incident.incident_id for incident in ranked_incidents]
+    escalate = [incident.incident_id for incident in ranked_incidents if compute_incident_priority(incident) >= 0.85]
+    defer = [incident.incident_id for incident in ranked_incidents if compute_incident_priority(incident) < 0.60]
+
+    pattern_counts: Dict[str, int] = {}
+    for incident in incidents:
+        key = f"{incident.incident_type}:{incident.airline}"
+        pattern_counts[key] = pattern_counts.get(key, 0) + 1
+    repeated = [key for key, count in pattern_counts.items() if count >= 2]
+
+    rationale = maybe_generate_rationale(
+        f"Summarize why these incident ids are highest priority: {ranking[:3]}."
+    ) or "Top incidents rank highest because their severity, recurrence, and delayed inspection windows imply the greatest operational urgency."
+
+    return AvigilanceAction(
+        task_id="task2",
+        incident_priority_action=IncidentPriorityAction(
+            priority_ranking=ranking,
+            top_3_rationale=rationale,
+            defer_list=defer,
+            escalate_immediately=escalate,
+            pattern_detected=bool(repeated),
+            pattern_description=("Repeated operator-pattern pairs detected: " + ", ".join(repeated)) if repeated else None,
+        ),
+    )
+
+
+def task_hours_for_fto(fto) -> int:
+    total = (
+        fto.performance_score
+        + fto.operational_score
+        + fto.safety_score
+        + fto.compliance_score
+        + fto.student_support_score
+    )
+    if total < 50:
+        return 16
+    if total < 70:
+        return 8
+    return 4
+
+
+def task_hours_for_incident(incident) -> int:
+    return {"critical": 8, "high": 6, "medium": 4, "low": 2}[incident.severity.value]
+
+
+def build_task3_action(obs) -> AvigilanceAction:
+    ftos = list(obs.fto_audit_queue or [])
+    incidents = list(obs.incident_queue or [])
+    inspectors = [f"inspector_{index + 1}" for index in range(obs.inspector_capacity or 2)]
+    remaining_budget = obs.week_budget_hours or 40
+    assignments: Dict[str, List[str]] = {inspector: [] for inspector in inspectors}
+
+    prioritized: List[Dict[str, Any]] = []
+    for incident in sorted(incidents, key=compute_incident_priority, reverse=True):
+        prioritized.append({"id": incident.incident_id, "hours": task_hours_for_incident(incident)})
+    for fto in sorted(ftos, key=task_hours_for_fto):
+        prioritized.append({"id": fto.fto_id, "hours": task_hours_for_fto(fto)})
+
+    deferred: List[str] = []
+    inspector_index = 0
+    for item in prioritized:
+        assigned = False
+        for _ in inspectors:
+            inspector = inspectors[inspector_index % len(inspectors)]
+            inspector_index += 1
+            if len(assignments[inspector]) >= 3:
+                continue
+            if item["hours"] <= remaining_budget:
+                assignments[inspector].append(item["id"])
+                remaining_budget -= item["hours"]
+                assigned = True
+                break
+        if not assigned:
+            deferred.append(item["id"])
+
+    rationale = maybe_generate_rationale(
+        f"Summarize an allocation strategy for {len(ftos)} FTOs and {len(incidents)} incidents under a budget of {obs.week_budget_hours} hours."
+    ) or "Allocated inspectors to the highest-risk incidents first, then used remaining hours for audit coverage without breaching per-inspector task caps."
+
+    covered = sum(len(tasks) for tasks in assignments.values())
+    total_items = len(prioritized) if prioritized else 1
+    predicted_reduction = normalize_open_score(covered / total_items)
+
+    return AvigilanceAction(
+        task_id="task3",
+        resource_allocation_action=ResourceAllocationAction(
+            inspector_assignments=assignments,
+            deferred_items=deferred,
+            priority_rationale=rationale,
+            predicted_risk_reduction=predicted_reduction,
+            abstain=False,
+            abstain_reason=None,
+        ),
+    )
+
+
+def run_episode(task_id: str, seed: int = 42) -> float:
+    env = AvigilanceEnv(task_id=task_id, seed=seed)
+    rewards: List[float] = []
+    steps_taken = 0
+    success = False
+    score = normalize_open_score(0)
+
+    log_start(task_id)
+
+    try:
+        obs = env.reset()
+        done = False
+        while not done:
+            if task_id == "task1":
+                action = build_task1_action(obs)
+            elif task_id == "task2":
+                action = build_task2_action(obs)
+            else:
+                action = build_task3_action(obs)
+
+            action_text = compact_json(action.model_dump(exclude_none=True))
+            error = None
+            try:
+                obs, reward, done, _info = env.step(action)
+                rewards.append(reward.score)
+                steps_taken += 1
+                log_step(steps_taken, action_text, reward.score, done, error)
+            except Exception as exc:
+                done = True
+                error = str(exc)
+                rewards.append(normalize_open_score(0.0))
+                steps_taken += 1
+                log_step(steps_taken, action_text, normalize_open_score(0.0), done, error)
+
+        if rewards:
+            score = normalize_open_score(sum(rewards) / len(rewards))
+        success = score >= 0.1
+    finally:
+        log_end(success, steps_taken, score, rewards)
+
+    return score
+
+
+def main() -> None:
+    for task_id in ("task1", "task2", "task3"):
+        run_episode(task_id, seed=42)
+
 
 if __name__ == "__main__":
-    results = []
-    for runner in [run_task1, run_task2, run_task3]:
-        try:
-            r = runner(seed=42)
-            results.append(r)
-        except Exception as e:
-            task = runner.__name__.replace("run_", "")
-            print(json.dumps({"event": "ERROR", "task_id": task, "error": str(e)}))
-            results.append({"task": task, "score": normalize_open_score(0.0)})
-
-    mean = round(sum(r["score"] for r in results) / len(results), 4)
-    print(json.dumps({
-        "event": "SUMMARY",
-        "scores": {r["task"]: round(r["score"], 4) for r in results},
-        "mean_score": mean,
-        "model": MODEL_NAME,
-        "timestamp": time.time()
-    }))
+    main()

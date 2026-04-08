@@ -179,6 +179,17 @@ These scores match `openenv.yaml`. The agent uses a rolling memory buffer (8 ent
 
 ## Setup
 
+## Space Frontend
+
+The Hugging Face Space root URL now serves an interactive frontend for manual evaluation.
+
+- Reset any task directly in the browser.
+- Inspect the exact observation payload returned by the environment.
+- Load a valid starter action for each task and submit it to `/step`.
+- Check `/state`, `/health`, and metadata without leaving the Space.
+
+Repository walkthrough docs live in `walkthrough/` and the validator helper script lives in `scripts/validate-submission.sh`.
+
 ### Environment Variables
 
 Copy `.env.example` to `.env` and fill in your credentials:
@@ -211,7 +222,7 @@ export HF_TOKEN="sk-..."
 python3 inference.py
 ```
 
-Produces structured START / STEP / END / SUMMARY JSON logs to stdout.
+Produces strict `[START]`, `[STEP]`, and `[END]` stdout logs in the submission validator format.
 
 ### Run LLM Evaluation (requires API key in .env)
 
@@ -235,6 +246,12 @@ Verify:
 ```bash
 curl http://localhost:7860/health
 curl -X POST "http://localhost:7860/reset?task_id=task1"
+```
+
+### Submission Validator
+
+```bash
+bash scripts/validate-submission.sh https://your-space-url.hf.space .
 ```
 
 ---
