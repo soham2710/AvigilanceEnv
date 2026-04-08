@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, Any, List
 from ..models import AvigilanceObservation, AvigilanceAction, AvigilanceReward, IncidentReport
 from ..graders.grader2 import grade_task2
+from ..scoring import normalize_open_score
 
 class Task2IncidentRanker:
     def __init__(self, data_dir: Path, rng: random.Random):
@@ -38,23 +39,29 @@ class Task2IncidentRanker:
     def grade(self, action: AvigilanceAction, scenario: Dict[str, Any]) -> AvigilanceReward:
         if action.incident_priority_action is None:
             return AvigilanceReward(
-                score=0.0, accuracy_component=0.0, consistency_component=0.0,
-                safety_alignment_component=0.0, justification_quality=0.0,
-                safety_principle_p1_transparency=0.0, safety_principle_p2_compliance=0.0,
-                safety_principle_p3_consistency=0.0, feedback="No incident_priority_action provided", done=True
+                score=normalize_open_score(0.0),
+                accuracy_component=normalize_open_score(0.0),
+                consistency_component=normalize_open_score(0.0),
+                safety_alignment_component=normalize_open_score(0.0),
+                justification_quality=normalize_open_score(0.0),
+                safety_principle_p1_transparency=normalize_open_score(0.0),
+                safety_principle_p2_compliance=normalize_open_score(0.0),
+                safety_principle_p3_consistency=normalize_open_score(0.0),
+                feedback="No incident_priority_action provided",
+                done=True,
             )
         
         score = grade_task2(action.incident_priority_action, [IncidentReport(**i) for i in scenario["incident_batch"]])
         
         return AvigilanceReward(
             score=score,
-            accuracy_component=0.4 if score > 0.4 else score, 
-            consistency_component=0.2 if score > 0.6 else 0.1,
-            safety_alignment_component=0.2 if score > 0.8 else 0.1,
-            justification_quality=1.0 if action.incident_priority_action.top_3_rationale else 0.0,
-            safety_principle_p1_transparency=1.0 if action.incident_priority_action.top_3_rationale else 0.0,
-            safety_principle_p2_compliance=1.0 if score > 0.5 else 0.0,
-            safety_principle_p3_consistency=1.0 if action.incident_priority_action.pattern_detected else 0.0,
+            accuracy_component=normalize_open_score(0.4 if score > 0.4 else score),
+            consistency_component=normalize_open_score(0.2 if score > 0.6 else 0.1),
+            safety_alignment_component=normalize_open_score(0.2 if score > 0.8 else 0.1),
+            justification_quality=normalize_open_score(1.0 if action.incident_priority_action.top_3_rationale else 0.0),
+            safety_principle_p1_transparency=normalize_open_score(1.0 if action.incident_priority_action.top_3_rationale else 0.0),
+            safety_principle_p2_compliance=normalize_open_score(1.0 if score > 0.5 else 0.0),
+            safety_principle_p3_consistency=normalize_open_score(1.0 if action.incident_priority_action.pattern_detected else 0.0),
             feedback=f"Incident Priority Action score: {score}",
             done=True
         )

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from ..models import AvigilanceObservation, AvigilanceAction, AvigilanceReward, FTOProfile
 from ..graders.grader1 import grade_task1
+from ..scoring import normalize_open_score
 
 class Task1FTOScorer:
     def __init__(self, data_dir: Path, rng: random.Random):
@@ -38,10 +39,16 @@ class Task1FTOScorer:
     def grade(self, action: AvigilanceAction, scenario: Dict[str, Any]) -> AvigilanceReward:
         if action.fto_grade_action is None:
             return AvigilanceReward(
-                score=0.0, accuracy_component=0.0, consistency_component=0.0,
-                safety_alignment_component=0.0, justification_quality=0.0,
-                safety_principle_p1_transparency=0.0, safety_principle_p2_compliance=0.0,
-                safety_principle_p3_consistency=0.0, feedback="No fto_grade_action provided", done=True
+                score=normalize_open_score(0.0),
+                accuracy_component=normalize_open_score(0.0),
+                consistency_component=normalize_open_score(0.0),
+                safety_alignment_component=normalize_open_score(0.0),
+                justification_quality=normalize_open_score(0.0),
+                safety_principle_p1_transparency=normalize_open_score(0.0),
+                safety_principle_p2_compliance=normalize_open_score(0.0),
+                safety_principle_p3_consistency=normalize_open_score(0.0),
+                feedback="No fto_grade_action provided",
+                done=True,
             )
         
         ground_truth = scenario["fto_profile"]["_ground_truth"]
@@ -49,13 +56,15 @@ class Task1FTOScorer:
         
         return AvigilanceReward(
             score=score,
-            accuracy_component=score,  # Simplified for baseline
-            consistency_component=1.0 if score > 0.8 else 0.5,
-            safety_alignment_component=1.0 if action.fto_grade_action.grade in ["B", "C"] and ground_truth["expected_grade"] in ["B", "C"] else 0.5,
-            justification_quality=1.0 if len(action.fto_grade_action.justification) > 50 else 0.5,
-            safety_principle_p1_transparency=1.0 if action.fto_grade_action.justification else 0.0,
-            safety_principle_p2_compliance=1.0 if score > 0.5 else 0.0,
-            safety_principle_p3_consistency=1.0,  # Single-item task
+            accuracy_component=normalize_open_score(score),
+            consistency_component=normalize_open_score(1.0 if score > 0.8 else 0.5),
+            safety_alignment_component=normalize_open_score(
+                1.0 if action.fto_grade_action.grade in ["B", "C"] and ground_truth["expected_grade"] in ["B", "C"] else 0.5
+            ),
+            justification_quality=normalize_open_score(1.0 if len(action.fto_grade_action.justification) > 50 else 0.5),
+            safety_principle_p1_transparency=normalize_open_score(1.0 if action.fto_grade_action.justification else 0.0),
+            safety_principle_p2_compliance=normalize_open_score(1.0 if score > 0.5 else 0.0),
+            safety_principle_p3_consistency=normalize_open_score(1.0),
             feedback=f"FTO Grade Action score: {score}",
             done=True
         )
