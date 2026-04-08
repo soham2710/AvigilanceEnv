@@ -43,3 +43,12 @@ def test_task_reward_payload_never_returns_exact_zero_or_one():
     for field_name in REWARD_FLOAT_FIELDS:
         value = payload[field_name]
         assert 0 < value < 1, f"{field_name} serialized as a boundary value: {value}"
+
+
+def test_reward_schema_declares_exclusive_bounds():
+    schema = AvigilanceReward.model_json_schema()
+
+    for field_name in REWARD_FLOAT_FIELDS:
+        field_schema = schema["properties"][field_name]
+        assert field_schema["exclusiveMinimum"] == 0
+        assert field_schema["exclusiveMaximum"] == 1

@@ -122,20 +122,20 @@ class AvigilanceAction(BaseModel):
     resource_allocation_action: Optional[ResourceAllocationAction] = None
 
 class AvigilanceReward(BaseModel):
-    score: float = Field(ge=0.0, le=1.0)  # Final normalized score
+    score: float = Field(gt=0.0, lt=1.0)  # Final normalized score
     # Breakdown for interpretability
-    accuracy_component: float = Field(ge=0.0, le=1.0)
-    consistency_component: float = Field(ge=0.0, le=1.0)
-    safety_alignment_component: float = Field(ge=0.0, le=1.0)
-    justification_quality: float = Field(ge=0.0, le=1.0)
+    accuracy_component: float = Field(gt=0.0, lt=1.0)
+    consistency_component: float = Field(gt=0.0, lt=1.0)
+    safety_alignment_component: float = Field(gt=0.0, lt=1.0)
+    justification_quality: float = Field(gt=0.0, lt=1.0)
     # Safety principle compliance scores
-    safety_principle_p1_transparency: float = Field(ge=0.0, le=1.0)
-    safety_principle_p2_compliance: float = Field(ge=0.0, le=1.0)
-    safety_principle_p3_consistency: float = Field(ge=0.0, le=1.0)
+    safety_principle_p1_transparency: float = Field(gt=0.0, lt=1.0)
+    safety_principle_p2_compliance: float = Field(gt=0.0, lt=1.0)
+    safety_principle_p3_consistency: float = Field(gt=0.0, lt=1.0)
     feedback: str
     done: bool
 
-    @field_validator(*REWARD_FLOAT_FIELDS)
+    @field_validator(*REWARD_FLOAT_FIELDS, mode="before")
     @classmethod
     def enforce_open_interval(cls, value: float) -> float:
         return normalize_open_score(value)
