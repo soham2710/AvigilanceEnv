@@ -1,8 +1,14 @@
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from environment.avigilance_env import AvigilanceEnv
 from environment.models import AvigilanceAction
 import uvicorn
+
+
+WEB_DIR = Path(__file__).parent / "web"
 
 app = FastAPI(
     title="AvigilanceEnv",
@@ -10,11 +16,18 @@ app = FastAPI(
     version="1.0.0"
 )
 
+app.mount("/assets", StaticFiles(directory=str(WEB_DIR)), name="assets")
+
 # In-memory session store (one env per session for demo)
 _envs: dict = {}
 
 @app.get("/")
 def root():
+    return FileResponse(WEB_DIR / "index.html")
+
+
+@app.get("/api/info")
+def api_info():
     return {
         "name": "AvigilanceEnv",
         "description": "India Aviation Safety Monitoring — OpenEnv Early Warning System",
@@ -68,6 +81,7 @@ def metadata():
         "description": "India Aviation Safety Monitoring OpenEnv — DGCA Early Warning System",
         "version": "1.0.0",
         "tasks": ["task1", "task2", "task3"],
+        "walkthrough": "/#walkthrough",
     }
 
 
@@ -91,6 +105,15 @@ def mcp(payload: dict = {}):
             "tools": ["reset", "step", "state"],
         },
     }
+
+
+@app.get("/{frontend_path:path}")
+def frontend_fallback(frontend_path: str):
+    if frontend_path.startswith(("api/", "assets/")):
+        raise HTTPException(status_code=404, detail="Not found")
+    if frontend_path in {"reset", "step", "state", "health", "metadata", "schema", "mcp"}:
+        raise HTTPException(status_code=404, detail="Not found")
+    return FileResponse(WEB_DIR / "index.html")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=7860)
