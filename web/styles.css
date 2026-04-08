@@ -1,0 +1,237 @@
+:root {
+  --bg: #f4efe6;
+  --panel: rgba(255, 249, 239, 0.9);
+  --panel-strong: linear-gradient(145deg, rgba(11, 55, 69, 0.95), rgba(26, 93, 95, 0.92));
+  --text: #15212b;
+  --muted: #58636d;
+  --accent: #cb5f2d;
+  --line: rgba(21, 33, 43, 0.12);
+  --shadow: 0 24px 60px rgba(25, 35, 43, 0.12);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", "Segoe UI Variable", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(203, 95, 45, 0.18), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(26, 93, 95, 0.22), transparent 28%),
+    linear-gradient(180deg, #f8f1e7 0%, var(--bg) 100%);
+}
+
+code, pre, textarea, input, select {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.page-shell {
+  width: min(1180px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 32px 0 56px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 24px;
+}
+
+.hero-copy, .hero-panel, .panel {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+
+.hero-copy {
+  background: var(--panel);
+  padding: 32px;
+}
+
+.hero-copy h1 {
+  font-size: clamp(3rem, 6vw, 5.3rem);
+  line-height: 0.95;
+  margin: 10px 0 16px;
+  letter-spacing: -0.06em;
+}
+
+.hero-panel {
+  background: var(--panel-strong);
+  color: #f8f5ef;
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+}
+
+.hero-metric {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(248, 245, 239, 0.15);
+}
+
+.hero-metric:last-child { border-bottom: 0; }
+
+.hero-metric span, .eyebrow, .label {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+}
+
+.hero-metric strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.15rem;
+}
+
+.lead {
+  max-width: 60ch;
+  color: var(--muted);
+  font-size: 1.06rem;
+  line-height: 1.6;
+}
+
+.hero-actions, .button-group, .control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.button {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 12px 18px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+  font-weight: 600;
+}
+
+.button:hover { transform: translateY(-1px); }
+
+.button.primary {
+  background: var(--accent);
+  color: #fff7f0;
+}
+
+.button.ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.button.small {
+  padding: 10px 14px;
+  font-size: 0.88rem;
+}
+
+.status-grid, .workspace-grid, .walkthrough-grid, .console-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.status-grid {
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 20px;
+}
+
+.workspace-grid {
+  grid-template-columns: 1.45fr 1fr;
+  margin-bottom: 20px;
+}
+
+.walkthrough-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.console-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.panel {
+  background: var(--panel);
+  padding: 24px;
+}
+
+.panel-emphasis {
+  background: linear-gradient(180deg, rgba(255, 246, 230, 0.96), rgba(248, 236, 219, 0.88));
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.status-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.status-stack strong {
+  display: block;
+  margin-top: 5px;
+}
+
+.checklist {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.7;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  min-width: 180px;
+}
+
+input, select, textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--text);
+  padding: 13px 15px;
+}
+
+textarea {
+  min-height: 280px;
+  resize: vertical;
+}
+
+#actionInputHelp {
+  margin: 10px 2px 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+pre {
+  margin: 0;
+  min-height: 280px;
+  padding: 18px;
+  border-radius: 18px;
+  background: #16252d;
+  color: #dce8e6;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+@media (max-width: 960px) {
+  .hero, .status-grid, .workspace-grid, .walkthrough-grid, .console-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-copy h1 { font-size: 3.2rem; }
+
+  .page-shell {
+    width: min(100vw - 20px, 100%);
+    padding-top: 18px;
+  }
+}

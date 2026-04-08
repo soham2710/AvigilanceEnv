@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AvigilanceEnv Space Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">HF Space Verification Console</p>
+        <h1>AvigilanceEnv</h1>
+        <p class="lead">A live testing cockpit for DGCA safety-monitoring tasks, OpenEnv endpoints, and submission-readiness checks.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#console">Open Test Console</a>
+          <a class="button ghost" href="#walkthrough">Read Walkthrough</a>
+        </div>
+      </div>
+      <div class="hero-panel">
+        <div class="hero-metric">
+          <span>Tasks</span>
+          <strong>3</strong>
+        </div>
+        <div class="hero-metric">
+          <span>Endpoints</span>
+          <strong>reset / step / state</strong>
+        </div>
+        <div class="hero-metric">
+          <span>Score Policy</span>
+          <strong>Strictly inside (0, 1)</strong>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="status-grid" id="console">
+        <article class="panel panel-emphasis">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Live Space Check</p>
+              <h2>API Status</h2>
+            </div>
+            <button class="button small" id="refreshStatus">Refresh</button>
+          </div>
+          <div class="status-stack">
+            <div>
+              <span class="label">Health</span>
+              <strong id="healthStatus">Checking...</strong>
+            </div>
+            <div>
+              <span class="label">Metadata</span>
+              <strong id="metadataStatus">Loading...</strong>
+            </div>
+            <div>
+              <span class="label">Current Task Session</span>
+              <strong id="sessionStatus">No episode yet</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Submission Checklist</p>
+              <h2>Readiness Targets</h2>
+            </div>
+          </div>
+          <ul class="checklist">
+            <li>HF Space serves a user-facing frontend and responds to <code>/reset</code>.</li>
+            <li>OpenEnv typed models and endpoints are testable from the browser.</li>
+            <li>Dockerfile builds the Space image without extra manual steps.</li>
+            <li><code>inference.py</code> emits only required <code>[START]</code>, <code>[STEP]</code>, and <code>[END]</code> logs.</li>
+            <li>Walkthrough docs and local validator script live in the repository.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="workspace-grid">
+        <article class="panel panel-wide">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Interactive Environment</p>
+              <h2>Test Any Task</h2>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label>
+              <span class="label">Task</span>
+              <select id="taskSelect">
+                <option value="task1">task1: FTO Quality Scorer</option>
+                <option value="task2">task2: Incident Prioritiser</option>
+                <option value="task3">task3: Resource Allocator</option>
+              </select>
+            </label>
+            <label>
+              <span class="label">Seed</span>
+              <input id="seedInput" type="number" value="42">
+            </label>
+            <div class="button-group">
+              <button class="button primary" id="resetEpisode">Reset Episode</button>
+              <button class="button ghost" id="loadExample">Load Example Action</button>
+            </div>
+          </div>
+
+          <div class="console-grid">
+            <div>
+              <h3>Observation</h3>
+              <pre id="observationView">Press Reset Episode to start.</pre>
+            </div>
+            <div>
+              <h3>Action</h3>
+              <label for="actionInput" class="label">Action JSON</label>
+              <textarea id="actionInput" spellcheck="false" aria-describedby="actionInputHelp"></textarea>
+              <p id="actionInputHelp">Edit the task action payload before submitting it to the environment.</p>
+              <div class="button-group">
+                <button class="button primary" id="submitAction">Submit Step</button>
+                <button class="button ghost" id="fetchState">Fetch State</button>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Response Feed</p>
+              <h2>Runtime Log</h2>
+            </div>
+          </div>
+          <pre id="resultView">Waiting for actions.</pre>
+        </article>
+      </section>
+
+      <section class="panel" id="walkthrough">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Repository Walkthrough</p>
+            <h2>How To Verify This Space</h2>
+          </div>
+        </div>
+        <div class="walkthrough-grid">
+          <div>
+            <h3>1. Interactive checks</h3>
+            <p>Use the console above to reset a task, inspect the observation payload, load an example action, and submit a step through the exact API that OpenEnv validators hit.</p>
+          </div>
+          <div>
+            <h3>2. Submission validation</h3>
+            <p>Run the repository validator in <code>scripts/validate-submission.sh</code> after the Space is deployed. It pings the Space, builds Docker, and calls <code>openenv validate</code>.</p>
+          </div>
+          <div>
+            <h3>3. Full walkthrough docs</h3>
+            <p>Repository docs live under the <code>walkthrough/</code> folder and cover deployment, endpoint testing, inference expectations, and local verification commands.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>
