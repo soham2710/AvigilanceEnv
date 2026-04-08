@@ -3,6 +3,18 @@ from typing import List, Dict, Optional, Literal
 from enum import Enum
 from .scoring import normalize_open_score
 
+
+REWARD_FLOAT_FIELDS = (
+    "score",
+    "accuracy_component",
+    "consistency_component",
+    "safety_alignment_component",
+    "justification_quality",
+    "safety_principle_p1_transparency",
+    "safety_principle_p2_compliance",
+    "safety_principle_p3_consistency",
+)
+
 class IncidentSeverity(str, Enum):
     LOW = "low"
     MEDIUM = "medium"
@@ -123,7 +135,7 @@ class AvigilanceReward(BaseModel):
     feedback: str
     done: bool
 
-    @field_validator('score')
+    @field_validator(*REWARD_FLOAT_FIELDS)
     @classmethod
     def enforce_open_interval(cls, value: float) -> float:
         return normalize_open_score(value)

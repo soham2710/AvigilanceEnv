@@ -28,7 +28,7 @@ def compute_priority_score(incident: IncidentReport) -> float:
     return round(min(raw, 1.0), 4)
 
 def grade_task2(action: IncidentPriorityAction, incidents: List[IncidentReport]) -> float:
-    score = 0.0
+    score = 0
     true_scores = {i.incident_id: compute_priority_score(i) for i in incidents}
     true_ranking = sorted(true_scores, key=true_scores.get, reverse=True)
 

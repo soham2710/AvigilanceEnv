@@ -3,7 +3,7 @@ from typing import Dict, Any
 from ..scoring import normalize_open_score
 
 def grade_task1(action: FTOGradeAction, ground_truth: Dict[str, Any]) -> float:
-    score = 0.0
+    score = 0
     # Grade accuracy (40% of reward)
     grades = ["C", "B", "A", "A+"]
     if action.grade == ground_truth["expected_grade"]:

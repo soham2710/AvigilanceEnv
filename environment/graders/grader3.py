@@ -44,7 +44,7 @@ def grade_task3(action: ResourceAllocationAction,
             # Lazy abstention in solvable scenario (PENALTY)
             return normalize_open_score(0.15)
 
-    score = 0.0
+    score = 0
     # 3. Constraint satisfaction (30% of reward)
     total_hours_used = 0
     inspector_task_counts = {i: 0 for i in range(inspector_count)}
