@@ -13,6 +13,13 @@ from environment.models import AvigilanceAction
 
 
 WEB_DIR = Path(__file__).parent / "web"
+GRADIO_THEME = gr.themes.Soft(primary_hue="amber", secondary_hue="cyan", neutral_hue="slate")
+GRADIO_CSS = """
+    .av-shell {max-width: 1220px; margin: 0 auto;}
+    .av-hero {background: linear-gradient(135deg, #143642 0%, #255957 55%, #e07a32 100%); color: #fffaf4; border-radius: 24px; padding: 28px;}
+    .av-card {border: 1px solid rgba(20, 54, 66, 0.12); border-radius: 22px; background: rgba(255, 250, 244, 0.96);}
+    .av-note {font-size: 0.96rem; line-height: 1.6; color: #22333b;}
+"""
 
 api_app = FastAPI(
     title="AvigilanceEnv",
@@ -258,15 +265,7 @@ def _ui_fetch_state(task_id: str) -> str:
 
 
 def _build_gradio_app() -> gr.Blocks:
-    theme = gr.themes.Soft(primary_hue="amber", secondary_hue="cyan", neutral_hue="slate")
-    css = """
-    .av-shell {max-width: 1220px; margin: 0 auto;}
-    .av-hero {background: linear-gradient(135deg, #143642 0%, #255957 55%, #e07a32 100%); color: #fffaf4; border-radius: 24px; padding: 28px;}
-    .av-card {border: 1px solid rgba(20, 54, 66, 0.12); border-radius: 22px; background: rgba(255, 250, 244, 0.96);}
-    .av-note {font-size: 0.96rem; line-height: 1.6; color: #22333b;}
-    """
-
-    with gr.Blocks(theme=theme, title="AvigilanceEnv Space Console", css=css) as demo:
+    with gr.Blocks(title="AvigilanceEnv Space Console") as demo:
         with gr.Column(elem_classes=["av-shell"]):
             gr.HTML(
                 """
@@ -349,7 +348,7 @@ def _build_gradio_app() -> gr.Blocks:
 
 
 demo = _build_gradio_app()
-app = gr.mount_gradio_app(api_app, demo, path="/")
+app = gr.mount_gradio_app(api_app, demo, path="/", theme=GRADIO_THEME, css=GRADIO_CSS)
 
 
 def main() -> None:
