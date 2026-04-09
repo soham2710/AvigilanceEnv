@@ -32,6 +32,11 @@ curl -X POST "http://127.0.0.1:7860/reset?task_id=task1&seed=42"
 curl "http://127.0.0.1:7860/state?task_id=task1"
 ```
 
+Expected behavior:
+
+- the root URL serves the Gradio console
+- `/reset`, `/step`, `/state`, `/health`, and `/metadata` still respond as JSON
+
 ## 3. Inference contract
 
 Required environment variables:

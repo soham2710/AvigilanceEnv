@@ -30,6 +30,7 @@ from environment.models import (
     AvigilanceAction, FTOGradeAction, IncidentPriorityAction,
     ResourceAllocationAction
 )
+from environment.scoring import format_open_score
 
 load_dotenv()
 
@@ -160,12 +161,16 @@ def parse_json(text: str) -> dict:
     return json.loads(text)
 
 
+def format_eval_score(score: float) -> str:
+    return format_open_score(score, decimals=4)
+
+
 def extract_lesson(task_id: str, obs_summary: str, score: float) -> str:
     """Ask the LLM to distil one short lesson from this episode for future memory."""
     prompt = (
         f"You just completed one episode of {task_id} in the Avigilance aviation safety environment.\n"
         f"Episode summary: {obs_summary}\n"
-        f"Score achieved: {score:.4f}\n\n"
+        f"Score achieved: {format_eval_score(score)}\n\n"
         f"Write ONE short sentence (max 25 words) summarising the most useful lesson "
         f"for future decisions in this task. Be specific, not generic."
     )
@@ -420,16 +425,16 @@ def run_task(task_id: str, episodes: int, seed_offset: int,
         memory.add(lesson)
 
         if (i + 1) % max(1, episodes // 5) == 0:
-            print(f"  Episode {i+1:3d}/{episodes} | score={episode_score:.4f} | "
-                  f"mean so far={np.mean(rewards):.4f} | memory={len(memory.entries)} entries")
+            print(f"  Episode {i+1:3d}/{episodes} | score={format_eval_score(episode_score)} | "
+                  f"mean so far={format_eval_score(np.mean(rewards))} | memory={len(memory.entries)} entries")
 
     return {
         "task": task_id,
         "episodes": episodes,
-        "mean_reward": round(float(np.mean(rewards)), 4),
-        "std_reward": round(float(np.std(rewards)), 4),
-        "min_reward": round(float(np.min(rewards)), 4),
-        "max_reward": round(float(np.max(rewards)), 4),
+        "mean_reward": float(np.mean(rewards)),
+        "std_reward": float(np.std(rewards)),
+        "min_reward": float(np.min(rewards)),
+        "max_reward": float(np.max(rewards)),
     }
 
 
@@ -473,12 +478,12 @@ def main():
     print(f"{'Task':<10} {'Episodes':>9} {'Mean':>8} {'Std':>8} {'Min':>8} {'Max':>8}")
     print("-" * 70)
     for r in results:
-        print(f"{r['task']:<10} {r['episodes']:>9} {r['mean_reward']:>8.4f} "
-              f"{r['std_reward']:>8.4f} {r['min_reward']:>8.4f} {r['max_reward']:>8.4f}")
+        print(f"{r['task']:<10} {r['episodes']:>9} {format_eval_score(r['mean_reward']):>8} "
+              f"{format_eval_score(r['std_reward']):>8} {format_eval_score(r['min_reward']):>8} {format_eval_score(r['max_reward']):>8}")
     if len(results) > 1:
-        mean_all = round(float(np.mean([r["mean_reward"] for r in results])), 4)
+        mean_all = float(np.mean([r["mean_reward"] for r in results]))
         print("-" * 70)
-        print(f"{'Mean (all)':<10} {'':>9} {mean_all:>8.4f}")
+        print(f"{'Mean (all)':<10} {'':>9} {format_eval_score(mean_all):>8}")
     print("=" * 70)
     print("\nNote: Update openenv.yaml and README.md baseline_scores with --full results.")
 

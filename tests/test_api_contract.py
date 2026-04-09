@@ -67,7 +67,7 @@ def test_root_serves_space_frontend() -> None:
     assert "text/html" in response.headers["content-type"]
     assert "AvigilanceEnv" in response.text
     assert "Reset Episode" in response.text
-    assert 'label for="actionInput"' in response.text
+    assert "gradio" in response.text.lower()
 
 
 def test_frontend_assets_are_served() -> None:
@@ -84,7 +84,7 @@ def test_frontend_assets_are_served() -> None:
 
 
 def test_frontend_fallback_route_serves_space_app() -> None:
-    response = client.get("/walkthrough")
+    response = client.get("/walkthrough", follow_redirects=True)
 
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]

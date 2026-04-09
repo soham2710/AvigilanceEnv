@@ -1,6 +1,6 @@
 # Space Frontend Guide
 
-The HF Space now serves a live frontend at the root URL.
+The HF Space now serves a live Gradio frontend at the root URL.
 
 What it does:
 
@@ -10,6 +10,7 @@ What it does:
 - Generates a valid starter action for each task.
 - Submits the action to `/step` and renders the returned reward payload.
 - Fetches `/state` for the active task session.
+- Keeps the UI and OpenEnv API on the same backend process.
 
 Suggested manual flow:
 

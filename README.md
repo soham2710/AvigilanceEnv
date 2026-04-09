@@ -2,7 +2,8 @@
 title: AvigilanceEnv
 colorFrom: blue
 colorTo: green
-sdk: docker
+sdk: gradio
+app_file: app.py
 pinned: false
 license: apache-2.0
 tags:
@@ -181,12 +182,13 @@ These scores match `openenv.yaml`. The agent uses a rolling memory buffer (8 ent
 
 ## Space Frontend
 
-The Hugging Face Space root URL now serves an interactive frontend for manual evaluation.
+The Hugging Face Space root URL now serves a Gradio control room for manual evaluation.
 
 - Reset any task directly in the browser.
 - Inspect the exact observation payload returned by the environment.
 - Load a valid starter action for each task and submit it to `/step`.
 - Check `/state`, `/health`, and metadata without leaving the Space.
+- Use the same server for both the Gradio UI and the OpenEnv API endpoints.
 
 Repository walkthrough docs live in `walkthrough/` and the validator helper script lives in `scripts/validate-submission.sh`.
 
