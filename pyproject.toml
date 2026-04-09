@@ -24,7 +24,7 @@ classifiers = [
 ]
 dependencies = [
     "fastapi>=0.115.2,<1.0.0",
-    "gradio>=5.23.3,<6.0.0",
+    "gradio>=6.11.0,<7.0.0",
     "uvicorn>=0.29.0,<1.0.0",
     "pydantic>=2.6.0,<3.0.0",
     "openai>=2.7.2",

@@ -1,7 +1,7 @@
 # Avigilance 2.0 — Python dependencies
 # Environment server and inference baseline
 fastapi==0.115.2
-gradio>=5.23.3,<6.0.0
+gradio>=6.11.0,<7.0.0
 uvicorn[standard]==0.30.0
 pydantic==2.7.0
 openai>=2.7.2
