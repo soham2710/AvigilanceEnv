@@ -15,10 +15,202 @@ from environment.models import AvigilanceAction
 WEB_DIR = Path(__file__).parent / "web"
 GRADIO_THEME = gr.themes.Soft(primary_hue="amber", secondary_hue="cyan", neutral_hue="slate")
 GRADIO_CSS = """
-    .av-shell {max-width: 1220px; margin: 0 auto;}
-    .av-hero {background: linear-gradient(135deg, #143642 0%, #255957 55%, #e07a32 100%); color: #fffaf4; border-radius: 24px; padding: 28px;}
-    .av-card {border: 1px solid rgba(20, 54, 66, 0.12); border-radius: 22px; background: rgba(255, 250, 244, 0.96);}
-    .av-note {font-size: 0.96rem; line-height: 1.6; color: #22333b;}
+    :root {
+        --av-bg: #f4efe6;
+        --av-panel: rgba(255, 251, 245, 0.94);
+        --av-panel-strong: linear-gradient(135deg, #123844 0%, #1f5960 52%, #cb5f2d 100%);
+        --av-line: rgba(20, 54, 66, 0.12);
+        --av-text: #15212b;
+        --av-muted: #5d6973;
+        --av-accent: #cb5f2d;
+        --av-shadow: 0 22px 60px rgba(16, 31, 39, 0.12);
+    }
+
+    body {
+        background:
+            radial-gradient(circle at top left, rgba(203, 95, 45, 0.18), transparent 24%),
+            radial-gradient(circle at bottom right, rgba(31, 89, 96, 0.18), transparent 26%),
+            linear-gradient(180deg, #f7f1e8 0%, var(--av-bg) 100%);
+        color: var(--av-text);
+    }
+
+    .gradio-container {
+        max-width: 1280px !important;
+        margin: 0 auto !important;
+        padding-bottom: 36px !important;
+    }
+
+    .av-shell {
+        max-width: 1240px;
+        margin: 0 auto;
+        gap: 18px;
+    }
+
+    .av-hero {
+        background: var(--av-panel-strong);
+        color: #fffaf4;
+        border-radius: 28px;
+        padding: 30px 32px;
+        box-shadow: var(--av-shadow);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .av-hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -40px -40px auto;
+        width: 240px;
+        height: 240px;
+        background: radial-gradient(circle, rgba(255,255,255,0.14), transparent 68%);
+        pointer-events: none;
+    }
+
+    .av-eyebrow {
+        margin: 0 0 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 0.75rem;
+        opacity: 0.84;
+    }
+
+    .av-hero h1 {
+        margin: 0 0 12px;
+        font-size: 3.5rem;
+        line-height: 0.94;
+    }
+
+    .av-hero p {
+        margin: 0;
+        max-width: 72ch;
+        font-size: 1.02rem;
+        line-height: 1.65;
+    }
+
+    .av-metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .av-metric {
+        border: 1px solid rgba(20, 54, 66, 0.1);
+        border-radius: 22px;
+        background: rgba(255, 251, 245, 0.92);
+        box-shadow: var(--av-shadow);
+        padding: 18px 20px;
+    }
+
+    .av-metric .label-wrap label,
+    .av-card .label-wrap label,
+    .av-status-grid .label-wrap label {
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 0.72rem !important;
+        color: var(--av-muted) !important;
+    }
+
+    .av-status-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .av-card {
+        border: 1px solid var(--av-line) !important;
+        border-radius: 24px !important;
+        background: var(--av-panel) !important;
+        box-shadow: var(--av-shadow);
+        padding: 8px;
+    }
+
+    .av-card h2,
+    .av-card h3,
+    .av-card p,
+    .av-card li,
+    .av-card label,
+    .av-card span {
+        color: var(--av-text);
+    }
+
+    .av-section-title {
+        margin: 0 0 8px;
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    .av-note {
+        font-size: 0.96rem;
+        line-height: 1.65;
+        color: var(--av-muted);
+    }
+
+    .av-pane {
+        border: 1px solid var(--av-line);
+        border-radius: 22px;
+        background: rgba(255,255,255,0.62);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+    }
+
+    .av-actions button,
+    .av-primary button,
+    .av-secondary button {
+        border-radius: 999px !important;
+        min-height: 42px !important;
+        font-weight: 700 !important;
+    }
+
+    .av-primary button {
+        background: var(--av-accent) !important;
+        border: none !important;
+        color: #fff8f2 !important;
+    }
+
+    .av-secondary button {
+        background: transparent !important;
+        border: 1px solid var(--av-line) !important;
+        color: var(--av-text) !important;
+    }
+
+    .av-card textarea,
+    .av-card input,
+    .av-card select {
+        border-radius: 18px !important;
+    }
+
+    .av-card pre,
+    .av-card code,
+    .av-card .cm-editor {
+        border-radius: 18px !important;
+    }
+
+    .av-badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    .av-badge {
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.12);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    @media (max-width: 980px) {
+        .av-metric-grid,
+        .av-status-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .av-hero h1 {
+            font-size: 2.7rem;
+        }
+    }
 """
 
 api_app = FastAPI(
@@ -270,61 +462,101 @@ def _build_gradio_app() -> gr.Blocks:
             gr.HTML(
                 """
                 <section class="av-hero">
-                  <p style="margin:0; text-transform:uppercase; letter-spacing:0.16em; font-size:0.75rem; opacity:0.85;">HF Space Console</p>
-                  <h1 style="margin:10px 0 12px; font-size:3.4rem; line-height:0.95;">AvigilanceEnv</h1>
-                  <p style="max-width:68ch; margin:0; font-size:1.05rem; line-height:1.65;">
+                  <p class="av-eyebrow">HF Space Console</p>
+                  <h1>AvigilanceEnv</h1>
+                  <p>
                     Gradio control room for DGCA safety-monitoring tasks. Reset scenarios, inspect typed observations,
                     edit raw action JSON, and submit exact environment steps without leaving the Space.
                   </p>
+                  <div class="av-badge-row">
+                    <div class="av-badge">3 DGCA Tasks</div>
+                    <div class="av-badge">Strict Reward Bounds</div>
+                    <div class="av-badge">OpenEnv API Live</div>
+                  </div>
                 </section>
                 """
             )
 
-            with gr.Row():
+            with gr.Row(elem_classes=["av-metric-grid"]):
+                gr.Textbox(value="task1 / task2 / task3", label="Tasks", interactive=False, elem_classes=["av-metric"])
+                gr.Textbox(value="(0, 1)", label="Reward Range", interactive=False, elem_classes=["av-metric"])
+                gr.Textbox(value="/reset /step /state", label="Endpoints", interactive=False, elem_classes=["av-metric"])
+                gr.Textbox(value="Gradio + FastAPI", label="Runtime", interactive=False, elem_classes=["av-metric"])
+
+            with gr.Row(elem_classes=["av-status-grid"]):
                 health_status = gr.Textbox(label="Health", interactive=False, elem_classes=["av-card"])
                 metadata_status = gr.Textbox(label="Metadata", interactive=False, elem_classes=["av-card"])
                 active_sessions = gr.Textbox(label="Active Sessions", interactive=False, elem_classes=["av-card"])
 
             with gr.Row():
                 with gr.Column(scale=3, elem_classes=["av-card"]):
-                    gr.Markdown(
+                    gr.HTML(
                         """
-                        ### Interactive Environment
-                        Use the controls below to run the same `/reset`, `/step`, and `/state` flows that validators call.
-                        Reward fields remain strictly inside `(0, 1)` across all tasks.
+                        <div>
+                          <p class="av-eyebrow" style="color:#5d6973; opacity:1; margin-bottom:6px;">Mission Control</p>
+                          <h2 class="av-section-title">Interactive Environment</h2>
+                          <p class="av-note">Use the controls below to drive the same <code>/reset</code>, <code>/step</code>, and <code>/state</code> flows that validators call.</p>
+                        </div>
                         """
                     )
                     with gr.Row():
                         task_select = gr.Dropdown(choices=["task1", "task2", "task3"], value="task1", label="Task")
                         seed_input = gr.Number(value=42, precision=0, label="Seed")
-                    with gr.Row():
-                        refresh_button = gr.Button("Refresh Status", variant="secondary")
-                        reset_button = gr.Button("Reset Episode", variant="primary")
-                        load_button = gr.Button("Load Example Action")
-                        state_button = gr.Button("Fetch State")
+                    with gr.Row(elem_classes=["av-actions"]):
+                        refresh_button = gr.Button("Refresh Status", variant="secondary", elem_classes=["av-secondary"])
+                        reset_button = gr.Button("Reset Episode", variant="primary", elem_classes=["av-primary"])
+                        load_button = gr.Button("Load Example Action", elem_classes=["av-secondary"])
+                        state_button = gr.Button("Fetch State", elem_classes=["av-secondary"])
 
-                    observation_view = gr.Code(label="Observation", language="json", interactive=False, lines=20)
-                    action_input = gr.Code(label="Action JSON", language="json", interactive=True, lines=20)
                     session_status = gr.Textbox(label="Session Status", interactive=False)
-                    submit_button = gr.Button("Submit Step", variant="primary")
-                    result_view = gr.Code(label="Runtime Output", language="json", interactive=False, lines=20)
+
+                    with gr.Tabs():
+                        with gr.Tab("Observation"):
+                            observation_view = gr.Code(label="Observation Payload", language="json", interactive=False, lines=22, elem_classes=["av-pane"])
+                        with gr.Tab("Action"):
+                            action_input = gr.Code(label="Action JSON", language="json", interactive=True, lines=22, elem_classes=["av-pane"])
+                        with gr.Tab("Runtime Output"):
+                            result_view = gr.Code(label="Result / State", language="json", interactive=False, lines=22, elem_classes=["av-pane"])
+
+                    submit_button = gr.Button("Submit Step", variant="primary", elem_classes=["av-primary"])
 
                 with gr.Column(scale=2, elem_classes=["av-card"]):
-                    gr.Markdown(
+                    gr.HTML(
                         """
-                        ### Walkthrough
-                        1. Pick a task and click `Reset Episode`.
-                        2. Review the returned observation.
-                        3. Load or edit a valid action payload.
-                        4. Submit a step and inspect reward and state output.
-
-                        ### Review Notes
-                        - `task1` and `task2` finish in one step.
-                        - `task3` can run for up to two steps.
-                        - Missing action objects still serialize reward values inside the open interval.
+                        <div>
+                          <p class="av-eyebrow" style="color:#5d6973; opacity:1; margin-bottom:6px;">Reviewer Guide</p>
+                          <h2 class="av-section-title">Submission Walkthrough</h2>
+                          <p class="av-note">This panel is tuned for reviewers testing task payloads, endpoint availability, and reward safety boundaries.</p>
+                        </div>
                         """
                     )
-                    gr.Markdown("<div id='walkthrough' class='av-note'>Repository docs remain available under the walkthrough folder for local verification and submission checks.</div>")
+                    gr.Markdown(
+                        """
+                        1. Pick a task and click `Reset Episode`.
+                        2. Review the observation payload exactly as the backend emits it.
+                        3. Load or edit a valid action object.
+                        4. Submit a step and inspect the reward or state JSON.
+                        5. Repeat for all three tasks to check task-specific schemas.
+                        """
+                    )
+                    with gr.Accordion("Task Notes", open=True):
+                        gr.Markdown(
+                            """
+                            - `task1` is a one-step FTO grading scenario.
+                            - `task2` is a one-step incident triage batch.
+                            - `task3` can run for up to two steps depending on the allocation score.
+                            - Missing action objects still serialize reward fields strictly inside `(0, 1)`.
+                            """
+                        )
+                    with gr.Accordion("Why This UI Exists", open=False):
+                        gr.Markdown(
+                            """
+                            - Root URL serves a user-facing Gradio console instead of raw JSON.
+                            - API endpoints stay intact for validators and scripts.
+                            - Observation, action, and result views are separated so reviewers do not lose context while editing payloads.
+                            """
+                        )
+                    gr.Markdown("<div id='walkthrough' class='av-note'>Repository walkthrough docs remain available in the <strong>walkthrough/</strong> folder for local verification and submission checks.</div>")
 
         refresh_button.click(_ui_refresh_status, outputs=[health_status, metadata_status, active_sessions])
         reset_button.click(
