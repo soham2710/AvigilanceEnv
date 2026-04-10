@@ -58,7 +58,7 @@ Expected behavior:
 - emits only `[START]`, `[STEP]`, and `[END]` log lines
 - runs tasks `task1`, `task2`, and `task3`
 - prints step rewards with two decimal places
-- prints final score with three decimal places
+- prints compact `[END]` scores and reward lists without padded trailing zeroes
 
 The script is resilient: if the configured model cannot be reached, it falls back to deterministic task heuristics and still completes.
 

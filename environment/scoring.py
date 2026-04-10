@@ -12,3 +12,9 @@ def format_open_score(score: float, *, decimals: int) -> str:
     display_epsilon = 10 ** (-decimals)
     bounded = max(display_epsilon, min(1.0 - display_epsilon, float(score)))
     return f"{bounded:.{decimals}f}"
+
+
+def format_open_score_compact(score: float, *, decimals: int = 4) -> str:
+    """Format scores inside (0, 1) without padded trailing zeroes."""
+    bounded = normalize_open_score(score, decimals=decimals)
+    return f"{bounded:.{decimals}f}".rstrip("0").rstrip(".")

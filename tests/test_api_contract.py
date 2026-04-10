@@ -67,7 +67,8 @@ def test_root_serves_space_frontend() -> None:
     assert "text/html" in response.headers["content-type"]
     assert "AvigilanceEnv" in response.text
     assert "Reset Episode" in response.text
-    assert "gradio" in response.text.lower()
+    assert "Avigilance Mission Console" in response.text
+    assert "task-card" in response.text
 
 
 def test_frontend_assets_are_served() -> None:
@@ -76,11 +77,12 @@ def test_frontend_assets_are_served() -> None:
 
     assert script.status_code == 200
     assert "javascript" in script.headers["content-type"]
-    assert "resetEpisode" in script.text
+    assert "pushTimeline" in script.text
 
     assert styles.status_code == 200
     assert "text/css" in styles.headers["content-type"]
     assert "--accent" in styles.text
+    assert ".task-card" in styles.text
 
 
 def test_frontend_fallback_route_serves_space_app() -> None:

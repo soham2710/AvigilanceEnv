@@ -6,87 +6,104 @@
   <title>AvigilanceEnv Space Console</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/styles.css">
 </head>
 <body>
   <div class="page-shell">
-    <header class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">HF Space Verification Console</p>
-        <h1>AvigilanceEnv</h1>
-        <p class="lead">A live testing cockpit for DGCA safety-monitoring tasks, OpenEnv endpoints, and submission-readiness checks.</p>
-        <div class="hero-actions">
-          <a class="button primary" href="#console">Open Test Console</a>
-          <a class="button ghost" href="#walkthrough">Read Walkthrough</a>
-        </div>
+    <div class="page-noise" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">DGCA Monitoring Space</p>
+        <h1>Avigilance Mission Console</h1>
       </div>
-      <div class="hero-panel">
-        <div class="hero-metric">
-          <span>Tasks</span>
-          <strong>3</strong>
-        </div>
-        <div class="hero-metric">
-          <span>Endpoints</span>
-          <strong>reset / step / state</strong>
-        </div>
-        <div class="hero-metric">
-          <span>Score Policy</span>
-          <strong>Strictly inside (0, 1)</strong>
-        </div>
+      <div class="topbar-chips">
+        <span class="chip">HF Space Root UI</span>
+        <span class="chip">OpenEnv Ready</span>
+        <span class="chip">Manual + Validator Flows</span>
       </div>
     </header>
 
     <main>
-      <section class="status-grid" id="console">
-        <article class="panel panel-emphasis">
-          <div class="panel-header">
-            <div>
-              <p class="eyebrow">Live Space Check</p>
-              <h2>API Status</h2>
+      <section class="hero" id="console">
+        <article class="hero-stage panel panel-dark">
+          <div class="hero-copy">
+            <p class="eyebrow">Live Operations Deck</p>
+            <h2>Run task resets, inspect payloads, and submit exact environment actions from one screen.</h2>
+            <p class="lead">The Space root now behaves like a real control surface instead of a generic Gradio form. It keeps the validator-safe API intact while giving reviewers a usable cockpit.</p>
+            <div class="hero-actions">
+              <a class="button primary" href="#controlDeck">Open Control Deck</a>
+              <a class="button ghost" href="#walkthrough">Verification Flow</a>
             </div>
-            <button class="button small" id="refreshStatus">Refresh</button>
           </div>
-          <div class="status-stack">
-            <div>
-              <span class="label">Health</span>
-              <strong id="healthStatus">Checking...</strong>
+
+          <div class="hero-signal-grid">
+            <div class="signal-card highlight">
+              <span class="label">API Health</span>
+              <strong id="healthStatus">Checking…</strong>
+              <p id="healthDetail">Polling live service metadata.</p>
             </div>
-            <div>
-              <span class="label">Metadata</span>
-              <strong id="metadataStatus">Loading...</strong>
+            <div class="signal-card">
+              <span class="label">Runtime</span>
+              <strong id="metadataStatus">Loading…</strong>
+              <p>FastAPI backend with browser-native console.</p>
             </div>
-            <div>
-              <span class="label">Current Task Session</span>
+            <div class="signal-card">
+              <span class="label">Session</span>
               <strong id="sessionStatus">No episode yet</strong>
+              <p id="sessionDetail">Reset any task to initialize an active episode.</p>
+            </div>
+            <div class="signal-card">
+              <span class="label">Reward Guardrail</span>
+              <strong>(0, 1)</strong>
+              <p>Scores remain strictly inside the open interval.</p>
             </div>
           </div>
         </article>
 
-        <article class="panel">
-          <div class="panel-header">
+        <aside class="hero-rail panel">
+          <div class="rail-block">
+            <p class="eyebrow">Active Task</p>
+            <h3 id="taskTitle">task1 · FTO Quality Scorer</h3>
+            <p id="taskDescription">Grade a Flying Training Organisation against the DGCA rubric and recommend action.</p>
+          </div>
+          <div class="task-card-grid" id="taskCards">
+            <button class="task-card is-active" data-task="task1" type="button">
+              <span>task1</span>
+              <strong>FTO Quality</strong>
+            </button>
+            <button class="task-card" data-task="task2" type="button">
+              <span>task2</span>
+              <strong>Incident Prioritiser</strong>
+            </button>
+            <button class="task-card" data-task="task3" type="button">
+              <span>task3</span>
+              <strong>Resource Allocator</strong>
+            </button>
+          </div>
+          <div class="rail-metrics">
             <div>
-              <p class="eyebrow">Submission Checklist</p>
-              <h2>Readiness Targets</h2>
+              <span class="label">Endpoints</span>
+              <strong>/reset · /step · /state</strong>
+            </div>
+            <div>
+              <span class="label">Use Case</span>
+              <strong>Reviewer and validator preflight</strong>
             </div>
           </div>
-          <ul class="checklist">
-            <li>HF Space serves a user-facing frontend and responds to <code>/reset</code>.</li>
-            <li>OpenEnv typed models and endpoints are testable from the browser.</li>
-            <li>Dockerfile builds the Space image without extra manual steps.</li>
-            <li><code>inference.py</code> emits only required <code>[START]</code>, <code>[STEP]</code>, and <code>[END]</code> logs.</li>
-            <li>Walkthrough docs and local validator script live in the repository.</li>
-          </ul>
-        </article>
+          <button class="button secondary wide" id="refreshStatus" type="button">Refresh Live Status</button>
+        </aside>
       </section>
 
-      <section class="workspace-grid">
-        <article class="panel panel-wide">
+      <section class="ops-grid">
+        <article class="panel panel-accent">
           <div class="panel-header">
             <div>
-              <p class="eyebrow">Interactive Environment</p>
-              <h2>Test Any Task</h2>
+              <p class="eyebrow">Control Deck</p>
+              <h2 id="controlDeck">Interactive Task Runner</h2>
             </div>
+            <div class="status-pill" id="resultBadge">Awaiting reset</div>
           </div>
 
           <div class="control-row">
@@ -98,65 +115,117 @@
                 <option value="task3">task3: Resource Allocator</option>
               </select>
             </label>
+
             <label>
               <span class="label">Seed</span>
               <input id="seedInput" type="number" value="42">
             </label>
-            <div class="button-group">
-              <button class="button primary" id="resetEpisode">Reset Episode</button>
-              <button class="button ghost" id="loadExample">Load Example Action</button>
+
+            <div class="button-group stretch">
+              <button class="button primary" id="resetEpisode" type="button">Reset Episode</button>
+              <button class="button ghost" id="loadExample" type="button">Load Example Action</button>
+              <button class="button ghost" id="fetchState" type="button">Fetch State</button>
+              <button class="button secondary" id="submitAction" type="button">Submit Step</button>
             </div>
           </div>
 
-          <div class="console-grid">
-            <div>
-              <h3>Observation</h3>
-              <pre id="observationView">Press Reset Episode to start.</pre>
+          <div class="summary-strip">
+            <div class="summary-card">
+              <span class="label">Observation Snapshot</span>
+              <strong id="observationSummary">No observation loaded</strong>
             </div>
-            <div>
-              <h3>Action</h3>
+            <div class="summary-card">
+              <span class="label">Last Reward</span>
+              <strong id="rewardSummary">None yet</strong>
+            </div>
+            <div class="summary-card">
+              <span class="label">Episode State</span>
+              <strong id="doneSummary">Idle</strong>
+            </div>
+          </div>
+
+          <div class="console-grid triple">
+            <section class="console-panel">
+              <div class="console-heading">
+                <h3>Observation Payload</h3>
+                <p>Backend response after reset or step.</p>
+              </div>
+              <pre id="observationView">Press Reset Episode to start.</pre>
+            </section>
+
+            <section class="console-panel">
+              <div class="console-heading">
+                <h3>Action Editor</h3>
+                <p>Use typed JSON matching the task schema.</p>
+              </div>
               <label for="actionInput" class="label">Action JSON</label>
               <textarea id="actionInput" spellcheck="false" aria-describedby="actionInputHelp"></textarea>
-              <p id="actionInputHelp">Edit the task action payload before submitting it to the environment.</p>
-              <div class="button-group">
-                <button class="button primary" id="submitAction">Submit Step</button>
-                <button class="button ghost" id="fetchState">Fetch State</button>
+              <p id="actionInputHelp">The helper can prefill a valid payload, but you can edit every field before submit.</p>
+            </section>
+
+            <section class="console-panel">
+              <div class="console-heading">
+                <h3>Runtime Result</h3>
+                <p>State, reward, or error output from the active request.</p>
+              </div>
+              <pre id="resultView">Waiting for actions.</pre>
+            </section>
+          </div>
+        </article>
+
+        <aside class="side-stack">
+          <article class="panel">
+            <div class="panel-header compact">
+              <div>
+                <p class="eyebrow">Operational Notes</p>
+                <h2>Task Guidance</h2>
               </div>
             </div>
-          </div>
-        </article>
+            <ul class="checklist strong">
+              <li><strong>task1</strong> is a one-step FTO grading decision with a DGCA action recommendation.</li>
+              <li><strong>task2</strong> ranks incidents by urgency and can escalate the highest-risk cases immediately.</li>
+              <li><strong>task3</strong> allocates inspector time and may require multiple steps depending on the scenario.</li>
+            </ul>
+          </article>
 
-        <article class="panel">
-          <div class="panel-header">
-            <div>
-              <p class="eyebrow">Response Feed</p>
-              <h2>Runtime Log</h2>
+          <article class="panel panel-log">
+            <div class="panel-header compact">
+              <div>
+                <p class="eyebrow">Activity Feed</p>
+                <h2>Operator Timeline</h2>
+              </div>
             </div>
-          </div>
-          <pre id="resultView">Waiting for actions.</pre>
-        </article>
+            <ol class="timeline" id="timeline">
+              <li>
+                <span class="timeline-tag">boot</span>
+                <p>Console loaded. Pulling service metadata.</p>
+              </li>
+            </ol>
+          </article>
+        </aside>
       </section>
 
-      <section class="panel" id="walkthrough">
+      <section class="walkthrough panel" id="walkthrough">
         <div class="panel-header">
           <div>
-            <p class="eyebrow">Repository Walkthrough</p>
-            <h2>How To Verify This Space</h2>
+            <p class="eyebrow">Verification Path</p>
+            <h2>How This Space Should Be Reviewed</h2>
           </div>
         </div>
+
         <div class="walkthrough-grid">
-          <div>
-            <h3>1. Interactive checks</h3>
-            <p>Use the console above to reset a task, inspect the observation payload, load an example action, and submit a step through the exact API that OpenEnv validators hit.</p>
-          </div>
-          <div>
-            <h3>2. Submission validation</h3>
-            <p>Run the repository validator in <code>scripts/validate-submission.sh</code> after the Space is deployed. It pings the Space, builds Docker, and calls <code>openenv validate</code>.</p>
-          </div>
-          <div>
-            <h3>3. Full walkthrough docs</h3>
-            <p>Repository docs live under the <code>walkthrough/</code> folder and cover deployment, endpoint testing, inference expectations, and local verification commands.</p>
-          </div>
+          <article>
+            <h3>1. Reset a live task</h3>
+            <p>Choose one of the three environments, seed it deterministically, and inspect the exact observation payload emitted by the backend.</p>
+          </article>
+          <article>
+            <h3>2. Submit a typed action</h3>
+            <p>Load the generated example or replace it with your own JSON, then submit the request against the same <code>/step</code> endpoint validators hit.</p>
+          </article>
+          <article>
+            <h3>3. Verify contract behavior</h3>
+            <p>Use the result panel and activity feed to confirm reward bounds, episode status, and endpoint availability before running repository validation scripts.</p>
+          </article>
         </div>
       </section>
     </main>

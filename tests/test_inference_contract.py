@@ -8,11 +8,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 START_RE = re.compile(r"^\[START\] task=(task1|task2|task3) env=avigilance-env model=.+$")
 STEP_RE = re.compile(r"^\[STEP\] step=\d+ action=.+ reward=\d+\.\d{2} done=(true|false) error=.*$")
-END_RE = re.compile(r"^\[END\] success=(true|false) steps=\d+ score=\d+\.\d{3} rewards=.*$")
+END_RE = re.compile(r"^\[END\] success=(true|false) steps=\d+ score=\d+(?:\.\d+)? rewards=.*$")
 
 
 def _extract_number(line: str, field: str) -> float:
-    match = re.search(rf"{field}=(\d+\.\d+)", line)
+    match = re.search(rf"{field}=(\d+(?:\.\d+)?)", line)
     assert match, f"{field} not found in line: {line}"
     return float(match.group(1))
 

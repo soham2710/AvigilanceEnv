@@ -12,7 +12,7 @@ from environment.models import (
     IncidentPriorityAction,
     ResourceAllocationAction,
 )
-from environment.scoring import format_open_score, normalize_open_score
+from environment.scoring import format_open_score, format_open_score_compact, normalize_open_score
 
 load_dotenv()
 
@@ -46,9 +46,9 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
 
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
-    rewards_text = ",".join(format_open_score(reward, decimals=2) for reward in rewards)
+    rewards_text = ",".join(format_open_score_compact(reward) for reward in rewards)
     print(
-        f"[END] success={str(success).lower()} steps={steps} score={format_open_score(score, decimals=3)} rewards={rewards_text}",
+        f"[END] success={str(success).lower()} steps={steps} score={format_open_score_compact(score)} rewards={rewards_text}",
         flush=True,
     )
 
