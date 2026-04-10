@@ -6,7 +6,7 @@ Before submitting, confirm all of the following.
 
 - `API_BASE_URL` is defined.
 - `MODEL_NAME` is defined.
-- `HF_TOKEN` is defined.
+- `HF_TOKEN` or `OPENAI_API_KEY` is defined.
 
 ## Required repository assets
 

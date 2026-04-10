@@ -44,7 +44,7 @@ Required environment variables:
 ```bash
 API_BASE_URL
 MODEL_NAME
-HF_TOKEN
+HF_TOKEN or OPENAI_API_KEY
 ```
 
 Run:

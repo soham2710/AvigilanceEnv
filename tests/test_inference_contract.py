@@ -19,11 +19,10 @@ def _extract_number(line: str, field: str) -> float:
 
 def test_inference_emits_only_required_log_lines() -> None:
     env = os.environ.copy()
-    env.setdefault("API_BASE_URL", "https://router.huggingface.co/v1")
-    env.setdefault("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+    env.setdefault("API_BASE_URL", "https://api.openai.com/v1")
+    env.setdefault("MODEL_NAME", "gpt-4o-mini")
     env.pop("HF_TOKEN", None)
     env.pop("OPENAI_API_KEY", None)
-    env.pop("OPEN_ROUTER_API", None)
 
     result = subprocess.run(
         [sys.executable, "inference.py"],

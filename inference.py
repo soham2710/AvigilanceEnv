@@ -16,14 +16,14 @@ from environment.scoring import format_open_score, format_open_score_compact, no
 
 load_dotenv()
 
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY") or os.getenv("OPEN_ROUTER_API")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+API_KEY = os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN")
 BENCHMARK = "avigilance-env"
 
 
 def build_client() -> OpenAI:
-    return OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN or "missing-token")
+    return OpenAI(base_url=API_BASE_URL, api_key=API_KEY or "missing-token")
 
 
 CLIENT = build_client()
@@ -54,7 +54,7 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
 
 
 def maybe_generate_rationale(prompt: str) -> Optional[str]:
-    if not HF_TOKEN or HF_TOKEN == "your_api_key_here":
+    if not API_KEY or API_KEY == "your_api_key_here":
         return None
 
     try:

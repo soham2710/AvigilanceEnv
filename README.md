@@ -202,7 +202,7 @@ MODEL_NAME=gpt-4o-mini
 HF_TOKEN=your_token_here
 ```
 
-Any OpenAI-compatible endpoint works (HuggingFace Inference, Together, Fireworks, etc.).
+This repo is configured for the OpenAI API path only. You can provide the credential as either `HF_TOKEN` or `OPENAI_API_KEY`.
 
 ### Local Development
 

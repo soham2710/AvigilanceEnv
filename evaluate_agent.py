@@ -5,17 +5,14 @@
 # across episodes within each task — patterns seen, thresholds that worked,
 # escalation decisions — and injects this into subsequent episode prompts.
 #
-# Multi-model fallback: if MODEL_NAME hits rate limits, call_llm rotates through
-# FREE_MODEL_POOL automatically. The active model is sticky — once a working model
-# is found it stays until it too is rate-limited. This lets the full evaluation
-# run uninterrupted across all available free models simultaneously.
+# Uses a single OpenAI-compatible model configuration for all evaluation runs.
 #
 # Usage:
 #   python evaluate_agent.py               # 10 episodes per task (default)
 #   python evaluate_agent.py --full        # 100 / 100 / 10 episodes
 #   python evaluate_agent.py --task task1  # single task
 #
-# Requires: API_BASE_URL and one of OPEN_ROUTER_API / HF_TOKEN / OPENAI_API_KEY in .env.
+# Requires: API_BASE_URL and either OPENAI_API_KEY or HF_TOKEN in .env.
 
 import json
 import os
@@ -37,50 +34,13 @@ load_dotenv()
 MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
 API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
 
-if "openai.com" in API_BASE_URL:
-    API_KEY = (os.environ.get("OPENAI_API_KEY")
-               or os.environ.get("HF_TOKEN", ""))
-elif "huggingface" in API_BASE_URL:
-    API_KEY = os.environ.get("HF_TOKEN", "")
-else:
-    API_KEY = (os.environ.get("OPEN_ROUTER_API")
-               or os.environ.get("HF_TOKEN")
-               or os.environ.get("OPENAI_API_KEY", ""))
+API_KEY = os.environ.get("OPENAI_API_KEY") or os.environ.get("HF_TOKEN", "")
 
 if not API_KEY:
-    print("ERROR: No API key found. Set OPEN_ROUTER_API, HF_TOKEN, or OPENAI_API_KEY in .env.")
+    print("ERROR: No API key found. Set OPENAI_API_KEY or HF_TOKEN in .env.")
     sys.exit(1)
 
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
-
-# Provider-aware fallback pool — rotation stays within the active endpoint.
-_is_hf = "huggingface" in API_BASE_URL
-_is_openai = "openai.com" in API_BASE_URL
-
-if _is_hf:
-    FREE_MODEL_POOL = [
-        "Qwen/Qwen2.5-72B-Instruct",
-        "meta-llama/Llama-3.3-70B-Instruct",
-        "mistralai/Mixtral-8x7B-Instruct-v0.1",
-        "Qwen/Qwen2.5-7B-Instruct",
-        "meta-llama/Llama-3.1-8B-Instruct",
-    ]
-elif _is_openai:
-    FREE_MODEL_POOL = [
-        "gpt-4o-mini",
-        "gpt-3.5-turbo",
-    ]
-else:
-    FREE_MODEL_POOL = [
-        "openrouter/auto",
-        "google/gemma-3-27b-it:free",
-        "meta-llama/llama-3.2-3b-instruct:free",
-        "google/gemma-3-12b-it:free",
-        "nousresearch/hermes-3-llama-3.1-405b:free",
-    ]
-
-_pool = [MODEL_NAME] + [m for m in FREE_MODEL_POOL if m != MODEL_NAME]
-_active_idx = 0  # sticky: retains last working model across all calls
 
 
 # ─── Agent Memory ─────────────────────────────────────────────────────────────
@@ -116,41 +76,29 @@ class AgentMemory:
 # ─── LLM helpers ─────────────────────────────────────────────────────────────
 
 def call_llm(messages: list, retries: int = 9) -> str:
-    """
-    Call the LLM with automatic model rotation on rate limits.
-    Tries each model in _pool up to `retries` times before rotating.
-    The _active_idx is sticky — once a model works it stays until it too fails.
-    """
-    global _active_idx
+    """Call the configured OpenAI-compatible model with limited retry handling."""
     import time
-    n = len(_pool)
-    for attempt in range(retries * n):
-        model = _pool[_active_idx % n]
+    for attempt in range(retries):
         try:
             response = client.chat.completions.create(
-                model=model,
+                model=MODEL_NAME,
                 messages=messages,
                 temperature=0.0,
                 max_tokens=1024,
             )
             content = response.choices[0].message.content
             if not content:
-                raise ValueError(f"empty response from {model}")
+                raise ValueError(f"empty response from {MODEL_NAME}")
             return content.strip()
         except Exception as e:
             err = str(e)
             is_rate = any(x in err for x in ("429", "rate limit", "rate_limit"))
             is_transient = any(x in err for x in ("502", "503", "upstream", "timeout", "empty response"))
             if is_rate or is_transient:
-                next_model = _pool[(_active_idx + 1) % n]
-                reason = "rate-limited" if is_rate else "bad response"
-                print(f"  [{model}] {reason} — rotating to [{next_model}]")
-                _active_idx += 1
-                if _active_idx % n == 0:
-                    time.sleep(5)
+                time.sleep(2)
             else:
                 raise
-    raise RuntimeError("All models in pool exhausted after retries")
+    raise RuntimeError(f"Model {MODEL_NAME} exhausted after retries")
 
 
 def parse_json(text: str) -> dict:

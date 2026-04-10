@@ -91,6 +91,32 @@ FRONTEND_HTML = """
             margin-bottom: 20px;
         }
 
+        .topbar-copy {
+            display: grid;
+            gap: 14px;
+        }
+
+        .topbar-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(18, 35, 44, 0.12);
+            background: rgba(255, 251, 247, 0.72);
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 700;
+            box-shadow: var(--shadow-soft);
+        }
+
         .topbar h1 {
             margin: 8px 0 0;
             font-size: clamp(2.4rem, 5vw, 4.7rem);
@@ -225,6 +251,12 @@ FRONTEND_HTML = """
             line-height: 1.6;
         }
 
+        .hero-rail {
+            display: grid;
+            align-content: start;
+            gap: 18px;
+        }
+
         .task-card-grid { margin: 22px 0; }
 
         .task-card {
@@ -285,6 +317,8 @@ FRONTEND_HTML = """
         .panel-accent { background: linear-gradient(180deg, rgba(255, 249, 242, 0.92), rgba(255, 244, 233, 0.82)); }
         .walkthrough-grid { grid-template-columns: repeat(3, 1fr); }
         .summary-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 18px; }
+        .explain-grid { display: grid; grid-template-columns: 1.08fr 0.92fr; gap: 18px; margin-top: 18px; }
+        .meaning-stack { display: grid; gap: 16px; }
 
         .panel-header {
             display: flex;
@@ -326,6 +360,8 @@ FRONTEND_HTML = """
 
         .summary-card,
         .console-panel,
+        .meaning-panel,
+        .legend-panel,
         .walkthrough article,
         .panel-log {
             border: 1px solid rgba(18, 35, 44, 0.08);
@@ -341,6 +377,63 @@ FRONTEND_HTML = """
         .console-heading { margin-bottom: 14px; }
         .console-heading h3,
         .walkthrough article h3 { margin: 0 0 6px; font-size: 1.05rem; }
+
+        .meaning-panel,
+        .legend-panel {
+            padding: 18px;
+        }
+
+        .meaning-panel h3,
+        .legend-panel h3 {
+            margin: 0 0 8px;
+            font-size: 1rem;
+        }
+
+        .meaning-panel p,
+        .legend-panel p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .meaning-body {
+            margin-top: 12px;
+            white-space: pre-wrap;
+            line-height: 1.65;
+        }
+
+        .legend-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .legend-item {
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(18, 35, 44, 0.08);
+        }
+
+        .legend-item strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.92rem;
+        }
+
+        .legend-item span {
+            color: var(--muted);
+            line-height: 1.55;
+            font-size: 0.92rem;
+        }
+
+        .hint-list {
+            display: grid;
+            gap: 10px;
+            margin: 0;
+            padding-left: 18px;
+            line-height: 1.65;
+        }
 
         pre {
             margin: 0;
@@ -403,7 +496,8 @@ FRONTEND_HTML = """
             .walkthrough-grid,
             .console-grid,
             .hero-signal-grid,
-            .summary-strip {
+            .summary-strip,
+            .explain-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -424,9 +518,16 @@ FRONTEND_HTML = """
     <div class="page-shell">
         <div class="page-noise" aria-hidden="true"></div>
         <header class="topbar">
-            <div>
-                <p class="eyebrow">DGCA Monitoring Space</p>
-                <h1>Avigilance Mission Console</h1>
+            <div class="topbar-copy">
+                <div>
+                    <p class="eyebrow">DGCA Monitoring Space</p>
+                    <h1>Avigilance Mission Console</h1>
+                </div>
+                <nav class="topbar-nav" aria-label="Primary">
+                    <a class="nav-link" href="#controlDeck">Control Deck</a>
+                    <a class="nav-link" href="#jsonGuide">JSON Guide</a>
+                    <a class="nav-link" href="#walkthrough">Walkthrough</a>
+                </nav>
             </div>
             <div class="topbar-chips">
                 <span class="chip">Single-File UI</span>
@@ -571,6 +672,30 @@ FRONTEND_HTML = """
                             <pre id="resultView">Waiting for actions.</pre>
                         </section>
                     </div>
+                    <div class="explain-grid">
+                        <div class="meaning-stack">
+                            <section class="meaning-panel">
+                                <h3>Observation Interpretation</h3>
+                                <p>Plain-English explanation of what the latest observation is telling you.</p>
+                                <div class="meaning-body" id="observationMeaning">Reset a task to see the live scenario translated into plain language.</div>
+                            </section>
+                            <section class="meaning-panel">
+                                <h3>Action Interpretation</h3>
+                                <p>Readable summary of the action payload currently in the editor.</p>
+                                <div class="meaning-body" id="actionMeaning">Pick a task or load an example action to see what your JSON is doing.</div>
+                            </section>
+                            <section class="meaning-panel">
+                                <h3>Result Interpretation</h3>
+                                <p>Short explanation of reward, completion state, and backend response behavior.</p>
+                                <div class="meaning-body" id="resultMeaning">Submit a step or fetch state to decode the response here.</div>
+                            </section>
+                        </div>
+                        <section class="legend-panel">
+                            <h3>Current Task Field Guide</h3>
+                            <p>Human-readable meaning of the most important fields for the selected task.</p>
+                            <div class="legend-list" id="fieldLegend"></div>
+                        </section>
+                    </div>
                 </article>
                 <aside class="side-stack">
                     <article class="panel">
@@ -584,6 +709,21 @@ FRONTEND_HTML = """
                             <li><strong>task1</strong> is a one-step FTO grading decision with a DGCA action recommendation.</li>
                             <li><strong>task2</strong> ranks incidents by urgency and can escalate the highest-risk cases immediately.</li>
                             <li><strong>task3</strong> allocates inspector time and may require multiple steps depending on the scenario.</li>
+                        </ul>
+                    </article>
+                    <article class="panel" id="jsonGuide">
+                        <div class="panel-header compact">
+                            <div>
+                                <p class="eyebrow">JSON Guide</p>
+                                <h2>What The Response Means</h2>
+                            </div>
+                        </div>
+                        <ul class="hint-list">
+                            <li><strong>observation</strong> is the live environment state after reset or step.</li>
+                            <li><strong>reward</strong> is the scored feedback for the action you submitted.</li>
+                            <li><strong>done</strong> tells you whether the episode is finished.</li>
+                            <li><strong>info</strong> contains extra backend details that help explain the outcome.</li>
+                            <li><strong>action JSON</strong> is your decision payload, not the backend response.</li>
                         </ul>
                     </article>
                     <article class="panel panel-log">
@@ -646,19 +786,41 @@ FRONTEND_HTML = """
         const resultBadge = document.getElementById("resultBadge");
         const timeline = document.getElementById("timeline");
         const taskCards = Array.from(document.querySelectorAll(".task-card"));
+        const observationMeaning = document.getElementById("observationMeaning");
+        const actionMeaning = document.getElementById("actionMeaning");
+        const resultMeaning = document.getElementById("resultMeaning");
+        const fieldLegend = document.getElementById("fieldLegend");
 
         const TASK_META = {
             task1: {
                 title: "task1 · FTO Quality Scorer",
-                description: "Grade a Flying Training Organisation against the DGCA rubric and recommend action."
+                description: "Grade a Flying Training Organisation against the DGCA rubric and recommend action.",
+                legend: [
+                    ["fto_profile", "The current training organization being reviewed, including safety, operations, compliance, and student support inputs."],
+                    ["total_score", "Your aggregate DGCA-style assessment score for the FTO."],
+                    ["recommended_action", "The operational decision you want the evaluator to take after grading."],
+                    ["risk_flags", "Explicit reasons why this FTO may need closer attention."]
+                ]
             },
             task2: {
                 title: "task2 · Incident Prioritiser",
-                description: "Rank active incidents by operational urgency and identify escalation candidates."
+                description: "Rank active incidents by operational urgency and identify escalation candidates.",
+                legend: [
+                    ["incident_batch", "The set of incidents currently waiting to be triaged."],
+                    ["priority_ranking", "Your ordered list from most urgent to least urgent incident."],
+                    ["escalate_immediately", "Incidents that should be handled without delay."],
+                    ["defer_list", "Incidents that can safely wait compared with higher-priority items."]
+                ]
             },
             task3: {
                 title: "task3 · Resource Allocator",
-                description: "Allocate inspection bandwidth across incidents and FTO audits under time constraints."
+                description: "Allocate inspection bandwidth across incidents and FTO audits under time constraints.",
+                legend: [
+                    ["incident_queue / fto_audit_queue", "The backlog competing for limited inspection time."],
+                    ["inspector_assignments", "Which work items each inspector should handle this round."],
+                    ["deferred_items", "Items intentionally left for later because capacity ran out."],
+                    ["predicted_risk_reduction", "Your estimate of how much operational risk the allocation removes."]
+                ]
             }
         };
 
@@ -680,11 +842,22 @@ FRONTEND_HTML = """
             }
         }
 
+        function renderLegend(taskId) {
+            fieldLegend.innerHTML = "";
+            for (const [field, meaning] of TASK_META[taskId].legend) {
+                const item = document.createElement("div");
+                item.className = "legend-item";
+                item.innerHTML = `<strong>${field}</strong><span>${meaning}</span>`;
+                fieldLegend.appendChild(item);
+            }
+        }
+
         function setTask(taskId) {
             const meta = TASK_META[taskId];
             taskSelect.value = taskId;
             taskTitle.textContent = meta.title;
             taskDescription.textContent = meta.description;
+            renderLegend(taskId);
             taskCards.forEach((card) => {
                 card.classList.toggle("is-active", card.dataset.task === taskId);
             });
@@ -705,6 +878,86 @@ FRONTEND_HTML = """
                 return `${incidents} incidents and ${ftos} FTO audits competing for inspectors`;
             }
             return "Observation loaded";
+        }
+
+        function explainObservation(taskId, observation) {
+            if (!observation) {
+                return "No observation has been loaded yet. Start with Reset Episode to generate a scenario from the backend.";
+            }
+
+            if (taskId === "task1" && observation.fto_profile) {
+                const fto = observation.fto_profile;
+                return `You are assessing ${fto.fto_name}. The payload exposes the five rubric components, current pass-rate, and recent incidents so you can decide whether the FTO is healthy, borderline, or risky enough for enforcement.`;
+            }
+
+            if (taskId === "task2" && observation.incident_batch) {
+                return `This observation is a triage queue of ${observation.incident_batch.length} incidents. Your job is to sort them by urgency, decide what must be escalated immediately, and identify what can be deferred.`;
+            }
+
+            if (taskId === "task3") {
+                const incidents = (observation.incident_queue || []).length;
+                const ftos = (observation.fto_audit_queue || []).length;
+                return `You are balancing ${incidents} incident items and ${ftos} FTO audits against limited inspector capacity. The observation tells you what is competing for time before you build assignments.`;
+            }
+
+            return "The observation is the environment state you are supposed to reason over before sending an action.";
+        }
+
+        function explainAction(taskId, payload) {
+            if (!payload || !payload.task_id) {
+                return "The action editor is empty or incomplete. A valid action must include task_id and the task-specific decision object.";
+            }
+
+            if (taskId === "task1" && payload.fto_grade_action) {
+                const action = payload.fto_grade_action;
+                return `This action grades the FTO as ${action.grade || "unknown"}, recommends ${action.recommended_action || "no action"}, and records the reasoning the evaluator should use to justify that decision.`;
+            }
+
+            if (taskId === "task2" && payload.incident_priority_action) {
+                const action = payload.incident_priority_action;
+                return `This action submits a ranked incident list${Array.isArray(action.priority_ranking) ? ` with ${action.priority_ranking.length} entries` : ""}, plus explicit escalation and defer decisions for the batch.`;
+            }
+
+            if (taskId === "task3" && payload.resource_allocation_action) {
+                const action = payload.resource_allocation_action;
+                const inspectorCount = action.inspector_assignments ? Object.keys(action.inspector_assignments).length : 0;
+                return `This allocation assigns work across ${inspectorCount} inspectors, marks what gets deferred, and estimates the risk reduction delivered by this plan.`;
+            }
+
+            return "The action JSON is your proposed decision. The backend will score it against the environment rules when you submit it.";
+        }
+
+        function explainResult(result) {
+            if (!result) {
+                return "No backend result has been received yet.";
+            }
+
+            if (result.reward) {
+                return `The backend accepted your action and returned a reward payload. The score is ${result.reward.score}, which is the overall quality signal for that step. done=${result.done} tells you whether the episode has ended, and info contains extra scoring context from the environment.`;
+            }
+
+            if (result.status === "no_active_episode") {
+                return "There is no active episode for the selected task yet. Reset the task first so the state endpoint has something to return.";
+            }
+
+            if (result.task_id || result.event === "reset") {
+                return "This response confirms the current task session status. After a reset, the next step is to inspect the observation and submit an action.";
+            }
+
+            if (result.error || result.detail) {
+                return "The backend rejected the request. Check the raw result panel for the exact validation or runtime error details.";
+            }
+
+            return "This panel translates raw backend output into the operational meaning of the response.";
+        }
+
+        function updateActionMeaningFromEditor() {
+            try {
+                const payload = JSON.parse(actionInput.value);
+                actionMeaning.textContent = explainAction(taskSelect.value, payload);
+            } catch (error) {
+                actionMeaning.textContent = `The action editor is not valid JSON yet: ${error.message}`;
+            }
         }
 
         function defaultAction(taskId, observation) {
@@ -807,15 +1060,20 @@ FRONTEND_HTML = """
                 observationView.textContent = pretty(observation);
                 actionInput.value = pretty(defaultAction(taskId, observation));
                 observationSummary.textContent = summarizeObservation(taskId, observation);
+                observationMeaning.textContent = explainObservation(taskId, observation);
+                updateActionMeaningFromEditor();
                 rewardSummary.textContent = "Awaiting first step";
                 doneSummary.textContent = "Episode active";
                 sessionStatus.textContent = `${taskId} seeded with ${seed}`;
                 sessionDetail.textContent = "Example action payload loaded and ready for editing.";
-                resultView.textContent = pretty({ event: "reset", task_id: taskId, seed, status: "ready" });
+                const resetResult = { event: "reset", task_id: taskId, seed, status: "ready" };
+                resultView.textContent = pretty(resetResult);
+                resultMeaning.textContent = explainResult(resetResult);
                 setBadge("Episode ready", "ok");
                 pushTimeline("reset", `Started ${taskId} with deterministic seed ${seed}.`);
             } catch (error) {
                 resultView.textContent = `Reset failed:\n${error.message}`;
+                resultMeaning.textContent = "The reset call failed, so no observation was loaded. The raw result shows the exact error returned by the backend.";
                 setBadge("Reset failed", "error");
                 pushTimeline("error", `Reset failed for ${taskId}: ${String(error.message || error)}`);
             }
@@ -827,6 +1085,7 @@ FRONTEND_HTML = """
                 payload = JSON.parse(actionInput.value);
             } catch (error) {
                 resultView.textContent = `Action JSON parse error:\n${error.message}`;
+                actionMeaning.textContent = `The action editor cannot be submitted because the JSON is invalid: ${error.message}`;
                 return;
             }
 
@@ -841,12 +1100,16 @@ FRONTEND_HTML = """
                 sessionStatus.textContent = result.done ? "Episode completed" : "Episode active";
                 sessionDetail.textContent = result.done ? "The environment reported a completed episode." : "A further step may still be available for this task.";
                 observationSummary.textContent = summarizeObservation(payload.task_id, result.observation);
+                observationMeaning.textContent = explainObservation(payload.task_id, result.observation);
+                actionMeaning.textContent = explainAction(payload.task_id, payload);
                 rewardSummary.textContent = `${result.reward.score}`;
                 doneSummary.textContent = result.done ? "Done" : "In progress";
+                resultMeaning.textContent = explainResult(result);
                 setBadge(result.done ? "Step complete" : "Step accepted", result.done ? "ok" : "warn");
                 pushTimeline("step", `Submitted ${payload.task_id}; reward score ${result.reward.score}; done=${result.done}.`);
             } catch (error) {
                 resultView.textContent = `Step failed:\n${error.message}`;
+                resultMeaning.textContent = "The step request failed before a reward could be produced. Check the raw result for the exact validation or runtime problem.";
                 setBadge("Step failed", "error");
                 pushTimeline("error", `Step request failed: ${String(error.message || error)}`);
             }
@@ -859,10 +1122,12 @@ FRONTEND_HTML = """
                 resultView.textContent = pretty(state);
                 doneSummary.textContent = state.done ? "Done" : "State fetched";
                 sessionDetail.textContent = `Fetched state for ${taskId}.`;
+                resultMeaning.textContent = explainResult(state);
                 setBadge("State fetched", "warn");
                 pushTimeline("state", `Fetched live state for ${taskId}.`);
             } catch (error) {
                 resultView.textContent = `State fetch failed:\n${error.message}`;
+                resultMeaning.textContent = "The state lookup failed. Usually that means the task has not been reset yet or the backend returned an error.";
                 setBadge("State failed", "error");
                 pushTimeline("error", `State fetch failed for ${taskId}: ${String(error.message || error)}`);
             }
@@ -880,6 +1145,7 @@ FRONTEND_HTML = """
                 observation = null;
             }
             actionInput.value = pretty(defaultAction(taskSelect.value, observation));
+            updateActionMeaningFromEditor();
             setBadge("Example action loaded", "warn");
             pushTimeline("draft", `Loaded example payload for ${taskSelect.value}.`);
         });
@@ -888,9 +1154,12 @@ FRONTEND_HTML = """
             setTask(taskSelect.value);
             actionInput.value = pretty(defaultAction(taskSelect.value, null));
             observationSummary.textContent = "Task changed; reset to load live observation";
+            observationMeaning.textContent = "Task switched. Reset the episode to load a fresh backend observation for this workflow.";
+            updateActionMeaningFromEditor();
             rewardSummary.textContent = "None yet";
             doneSummary.textContent = "Idle";
             sessionDetail.textContent = `Ready to reset ${taskSelect.value}.`;
+            resultMeaning.textContent = "No backend result has been received for the newly selected task yet.";
         });
 
         taskCards.forEach((card) => {
@@ -898,15 +1167,23 @@ FRONTEND_HTML = """
                 setTask(card.dataset.task);
                 actionInput.value = pretty(defaultAction(card.dataset.task, null));
                 observationSummary.textContent = "Task changed; reset to load live observation";
+                observationMeaning.textContent = "Task switched. Reset the episode to load a fresh backend observation for this workflow.";
+                updateActionMeaningFromEditor();
                 rewardSummary.textContent = "None yet";
                 doneSummary.textContent = "Idle";
                 sessionDetail.textContent = `Ready to reset ${card.dataset.task}.`;
+                resultMeaning.textContent = "No backend result has been received for the newly selected task yet.";
             });
         });
+
+        actionInput.addEventListener("input", updateActionMeaningFromEditor);
 
         setTask(taskSelect.value);
         refreshStatus();
         actionInput.value = pretty(defaultAction(taskSelect.value, null));
+        observationMeaning.textContent = "Reset a task to see the live scenario translated into plain language.";
+        updateActionMeaningFromEditor();
+        resultMeaning.textContent = "Submit a step or fetch state to decode the backend response here.";
     </script>
 </body>
 </html>
