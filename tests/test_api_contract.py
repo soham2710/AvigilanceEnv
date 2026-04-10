@@ -69,20 +69,17 @@ def test_root_serves_space_frontend() -> None:
     assert "Reset Episode" in response.text
     assert "Avigilance Mission Console" in response.text
     assert "task-card" in response.text
+    assert "<style>" in response.text
+    assert "<script>" in response.text
 
 
-def test_frontend_assets_are_served() -> None:
-    script = client.get("/assets/app.js")
-    styles = client.get("/assets/styles.css")
+def test_root_contains_self_contained_frontend_logic() -> None:
+    response = client.get("/")
 
-    assert script.status_code == 200
-    assert "javascript" in script.headers["content-type"]
-    assert "pushTimeline" in script.text
-
-    assert styles.status_code == 200
-    assert "text/css" in styles.headers["content-type"]
-    assert "--accent" in styles.text
-    assert ".task-card" in styles.text
+    assert response.status_code == 200
+    assert "pushTimeline" in response.text
+    assert "defaultAction" in response.text
+    assert "--accent" in response.text
 
 
 def test_frontend_fallback_route_serves_space_app() -> None:
